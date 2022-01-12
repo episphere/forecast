@@ -1,0 +1,134 @@
+
+body {
+  font-family: "Helvetica";
+  color: rgb(63, 63, 63);
+  padding-left: 30px;
+}
+
+.top-element {
+  display: inline-block;
+  padding-right: 10px;
+}
+
+.data input {
+  padding-left: 10px;
+}
+
+.file-select {
+  color: rgb(63, 63, 63);
+  font-size: .8em;
+}
+
+.file-select input {
+  font-size: .95em;
+}
+
+.file-select label {
+  padding-left: 10px;
+}
+
+.params {
+  margin-top: 15px;
+  display: flex;
+  font-size: .8em;
+
+}
+
+.param-input {
+  /* color: grey; */
+  padding-right: 25px;
+}
+
+.param-input input {
+    max-width: 80px;
+    margin-top: 10px;
+}
+
+.plots {
+  margin-top: 20px;
+}
+
+a {
+  color: #007bff;
+}
+
+pre {
+  margin:1em 0;
+}
+
+h1 {
+  color: brown
+}
+
+.plot-label {
+  color: grey;
+}
+
+g {
+  font-size: 0.8em;
+  font-family: "Helvetica"
+}
+
+.slidecontainer {
+  width: 60px;
+  /* margin-left: 10px; */
+  /* margin-top: 8px; */
+}
+
+.slider {
+  -webkit-appearance: none;
+  /* width: 560px; */
+  height: 5px;
+  /* border-radius: 2px; */
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: brown;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #04AA6D;
+  cursor: pointer;
+}
+
+.dot {
+  height: 37px;
+  width: 37px;
+  background-color: brown;
+  color: white;
+  border-radius: 50%;
+  margin-left: 5px;
+  display: inline-block;
+  line-height: 37px;
+  text-align: center;
+  text-alight: mid;
+  vertical-align: middle;
+}
+
+
+.time-control {
+  display: flex;
+}
+
+#plot_ts {
+  float: left;
+}
+
