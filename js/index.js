@@ -3,7 +3,7 @@ import { EmbedPlot } from "./EmbedPlot2.js"
 
 const vField = "deaths"
 
-const dataPromise = d3.json("/data/data.json")
+const dataPromise = d3.json("data/data.json")
 
 let E = parseInt(document.getElementById("param-input-E").value)
 let tp = 16
