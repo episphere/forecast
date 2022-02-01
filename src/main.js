@@ -1,5 +1,8 @@
 import { SimplexPlot } from "./SimplexPlot.js"
-import { EmbedPlot } from "./EmbedPlot2.js"
+import { EmbedPlot } from "./EmbedPlot.js"
+import {simplex, delayEmbed} from "./forecastOld.js"
+import { PhasePlot } from "./PhasePlot.js"
+import { DistancePlot } from "./DistancePlot.js"
 
 const vField = "deaths"
 
@@ -36,7 +39,6 @@ Promise.all([dataPromise]).then(datas => {
       numberFields.push(fieldType[0])
     }
   }
-  console.log(numberFields)
 
   const valueFieldSelect = document.getElementById("value-field")
   const stratFieldSelect = document.getElementById("strat-field")
@@ -46,22 +48,48 @@ Promise.all([dataPromise]).then(datas => {
   const dataEmbed = delayEmbed(data().get(), [vField], E, {tau: tau})
   const tRange = [tp + E*tau + nn, d3.extent(data().get(), d => d.t)[1]-tp]
 
-  let forecasts = forecast(dataEmbed, tRange)
-  forecasts = new TAFFY(forecasts)
+  const forecastsBase = forecast(dataEmbed, tRange)
+  const forecasts = new TAFFY(forecastsBase)
 
   const simplexElement = document.getElementById("plot_ts")
-  const simplexPlot = new SimplexPlot(simplexElement, data, forecasts, vField, {
-    width: 520, height: 380, tRangePlot: [1, 400-16],
-    margin: {left: 60, right: 30, top: 40, bottom: 40},
+  // const simplexPlot = new SimplexPlot(simplexElement, data, forecasts, vField, {
+  //   width: 520, height: 380, tRangePlot: [1, 400-16],
+  //   margin: {left: 60, right: 30, top: 35, bottom: 30},
+  //   weightColoring: true
+  // })
+  const simplexPlot = new SimplexPlot(simplexElement, baseData, forecastsBase, vField, {
+    width: 520, height: 340, tRangePlot: [1, 400-16],
+    margin: {left: 60, right: 30, top: 35, bottom: 30},
     weightColoring: true
   })
 
+  simplexPlot.state.plotT = tRange[0] + Math.floor(0.75*(tRange[1] - tRange[0]))
 
-  const embedPlot = new EmbedPlot(document.getElementById("plot_alt"), data, forecasts, vField, {
+  // TODO: For layout, do two flex boxes on top of each other.
+
+
+  // TODO: Update this
+  const dataEmbedDb = new TAFFY(dataEmbed)
+  const embedPlot = new EmbedPlot(document.getElementById("plot_alt"), baseData, forecastsBase, vField, {
     state: simplexPlot.state,
     distanceColoring: true,
-    width: 380, height: 380, 
-    margin: {left: 60, right: 30, top: 40, bottom: 40}
+    width: 340, height: 340, 
+    margin: {left: 60, right: 30, top: 35, bottom: 30}
+  })
+
+  const phasePlot = new PhasePlot(document.getElementById("plot_phase"), dataEmbedDb, forecasts, vField, {
+    state: simplexPlot.state,
+    weightColoring: true,
+    width: 340, height: 340, 
+    margin: {left: 60, right: 30, top: 35, bottom: 30}
+  })
+
+  const distancePlot = new DistancePlot(document.getElementById("plot_weight"), forecastsBase, vField, {
+    state: simplexPlot.state,
+    weightColoring: true,
+    weightColorFunction: embedPlot.weightColorScale,
+    width: 340, height: 340, 
+    margin: {left: 60, right: 30, top: 35, bottom: 30}
   })
 
 
@@ -79,24 +107,35 @@ Promise.all([dataPromise]).then(datas => {
 
   const timeContainer = document.getElementById("time-slider-container")
 
-
   const timeSlider = document.createElement("input")
   timeSlider.setAttribute("type", "range")
   timeSlider.setAttribute("class", "slider")
+  
   // timeSlider.setAttribute("style", `
   //   width: ${simplexPlot.scaleX.range()[1] - simplexPlot.scaleX.range()[0] + 16}px;
   //   position: absolute;
   //   left: ${simplexElement.getBoundingClientRect().left + simplexPlot.scaleX.range()[0] - 10}px;
   // `)
+  const sliderLeft = simplexElement.getBoundingClientRect().left + simplexPlot.scaleX(tRange[0]) - 10
+  const sliderWidth = simplexPlot.scaleX(tRange[1]) - simplexPlot.scaleX(tRange[0]) + 10
   timeSlider.setAttribute("style", `
-    width: ${simplexPlot.scaleX(tRange[1]) - simplexPlot.scaleX(tRange[0]) + 16}px;
+    width: ${sliderWidth}px;
     position: absolute;
-    left: ${simplexElement.getBoundingClientRect().left + simplexPlot.scaleX(tRange[0]) - 10}px;
+    left: ${sliderLeft}px;
   `)
   timeSlider.setAttribute("min", tRange[0])
   timeSlider.setAttribute("max", tRange[1])
-  const timeLabel = document.createElement("span")
+  timeSlider.setAttribute("value", simplexPlot.state.plotT)
+  const timeLabel = document.createElement("label")
   timeLabel.innerText = timeSlider.value
+  timeLabel.setAttribute("style", `\
+    position: absolute;
+    left: ${sliderLeft + sliderWidth + 20}px;
+    font-size: .7em;
+    color: brown;
+    font-weight: bold;
+  `)
+  //timeLabel.style("left", sliderLeft + "px")
 
   const timeRect = document.createElement("div")
   timeRect.setAttribute("style", `
@@ -112,7 +151,7 @@ Promise.all([dataPromise]).then(datas => {
 
   timeSlider.addEventListener("input", () => {
     simplexPlot.state.plotT = parseInt(timeSlider.value)
-    timeLabel.innerText = timeSlider.value
+    timeLabel.innerText = "t = " + timeSlider.value
   })
   timeContainer.appendChild(timeSlider)
   //timeContainer.appendChild(timeLabel)

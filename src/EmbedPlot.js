@@ -8,7 +8,8 @@ export class EmbedPlot extends Plot {
       hoverRadius: 30, 
       hp: 0.1,
       width: 640, 
-      height: 480
+      height: 480,
+      state: null
     })
 
     this.data = data
@@ -20,7 +21,7 @@ export class EmbedPlot extends Plot {
 
   updateForecasts(forecasts) {
     this.forecasts = forecasts
-    this.tp = d3.extent(this.forecasts().get(), d => d.tp)[1]
+    this.tp = d3.extent(this.forecasts, d => d.tp)[1]
 
     this.setDefaults()
 
@@ -37,7 +38,7 @@ export class EmbedPlot extends Plot {
   }
 
   setDefaults() {
-    this.tRange = d3.extent(this.forecasts().get(), d => d.t)
+    this.tRange = d3.extent(this.forecasts, d => d.t)
   }
 
   createBase() {
@@ -94,11 +95,10 @@ export class EmbedPlot extends Plot {
   }
 
   updatePlotT() {
-    this.now = this.forecasts({baseT: this.state.plotT, tp: this.state.plotTp}).first()
-    //this.neighbors = this.now.neighbors.map(d => ({...this.data({t: d.t}).first(), ...d}))
+    this.now = this.forecasts.find(d => d.baseT == this.state.plotT && d.tp == this.state.plotTp)
 
     const neighbors = new Map()
-    for (const forecast of this.forecasts({baseT: this.state.plotT}).get()) {
+    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
       for (const neighbor of forecast.neighbors) {
         neighbors.set(neighbor.t, neighbor)
       }
@@ -109,21 +109,12 @@ export class EmbedPlot extends Plot {
     for (const [i, neighbor] of this.neighbors.entries()) {
       const neighborLine = []
       for (let to = -this.now.E + 1; to <= 0; to++) {
-        const neigh = this.data({t: neighbor.t + to}).first()
+        const neigh = this.data.find(d => d.t == neighbor.t + to)
         neighborLine.push({to: to, baseT: neighbor.t, t: neighbor.t + to, 
           [this.vField]: neigh[this.vField], w: neighbor.w})
       }
       neighborLines.push(neighborLine)
     }
-
-    // const nextLines = []
-    // for (const [i, neighbor] of this.neighbors.entries()) {
-    //   const nextLine = []
-    //   nextLine.push({to: 0,  t: neighbor.t, baseT: neighbor.t,[this.vField]: neighbor[this.vField]})
-    //   nextLine.push({to: this.state.plotTp, baseT: neighbor.t, [this.vField]: this.data({t: neighbor.t + this.state.plotTp}).first()[this.vField]})
-    //   nextLines.push(nextLine)
-    // }
-    // this.nextLines = nextLines
 
     const nextLines = []
     for (const neighbor of this.neighbors) {
@@ -141,7 +132,7 @@ export class EmbedPlot extends Plot {
           baseT: neighbor.t,
           w: neighbor.w,
           to: tpi, 
-          [this.vField]: this.data({t: neighbor.t + tpi}).first()[this.vField]
+          [this.vField]: this.data.find(d => d.t == neighbor.t + tpi)[this.vField]
         })
       }
       nextLines.push(nextLine)
@@ -149,12 +140,12 @@ export class EmbedPlot extends Plot {
 
     const nowLine = []
     for (let to = - this.now.E + 1; to <= 0; to++) {
-      nowLine.push({baseT: this.now.t, to: to, [this.vField]: this.data({t: this.now.baseT + to}).first()[this.vField]})  
+      nowLine.push({baseT: this.now.t, to: to, [this.vField]: 
+        this.data.find(d => d.t == this.now.baseT + to)[this.vField]})  
     }  
     
-    //let predictLine = [{...this.data({t: this.state.plotT}).first(), to: 0}]
     let predictLine = []
-    for (const forecast of this.forecasts({baseT: this.state.plotT}).get()) {
+    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
       predictLine.push({to: forecast.tp, [this.vField]: forecast.yh})
     }
 
@@ -183,7 +174,7 @@ export class EmbedPlot extends Plot {
     this.createGrid(this.nodes.gridLines, this.scaleX, this.scaleY, d => d == 0)
 
 
-    this.createAxisBottom(this.nodes.axisX, this.scaleX, "week offset", {
+    this.createAxisBottom(this.nodes.axisX, this.scaleX, "t offset", {
       tickFilter: tick => Number.isInteger(tick),
       tickFormat: d3.format("d")
     })
@@ -231,7 +222,7 @@ export class EmbedPlot extends Plot {
         .attr("id", `now`)
         .attr("d", this.line)
         .attr("stroke-width", 3)
-        .attr("stroke", "purple")
+        .attr("stroke", "blue")
 
     this.nodes.nowLine
       .selectAll("circle")
@@ -241,7 +232,7 @@ export class EmbedPlot extends Plot {
         .attr("cx",  this.scaleX(0))
         .attr("cy",  d => this.scaleY(d[this.vField]))
         .attr("r", 3)
-        .attr("fill", "purple")
+        .attr("fill", "blue")
       
     this.nodes.predictLine
       .selectAll("path")
@@ -253,7 +244,7 @@ export class EmbedPlot extends Plot {
         .attr("stroke", "purple")
 
     const nexts = []
-    for (const forecast of this.forecasts({baseT: this.state.plotT}).get()) {
+    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
       for (const next of forecast.nexts) {
         nexts.push({baseT: next.baseT, t: this.state.plotT + forecast.tp, tp: forecast.tp,
           [this.vField]: next[this.vField], w: next.w}) 
@@ -265,9 +256,7 @@ export class EmbedPlot extends Plot {
     for (let tpi = 1; tpi <= this.tp; tpi++) {
       const tpNexts = nexts.filter(d => d.tp == tpi)
       const VW = tpNexts.map(d => [d[this.vField], d.w])
-      console.log(VW)
       const kdeRes = this.kde(VW, null, this.hp)
-      console.log(kdeRes)
 
       //console.log(domainSize, kdeRes.map(d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize))
       const gradient = this.nodes.gradients.select(`#embed-gradient-${tpi}`)
@@ -280,7 +269,6 @@ export class EmbedPlot extends Plot {
     }
 
     const rectWidth = this.scaleX(1) - this.scaleX(0) 
-    console.log("Rect Width", rectWidth)
     this.nodes.confRects
       .selectAll("rect")
       .data(Array.from({length: this.tp}, (_, i) => i+1))
@@ -296,9 +284,11 @@ export class EmbedPlot extends Plot {
     const coloringFunction = this.distanceColoring ? 
       d => this.weightColorScale(d[0].w) : d => "red"
 
-    const colorFunctionPast = d => !this.state.focused || this.state.focused == d[d.length-1].t ?
+    const colorFunctionPast = d => !this.state.focused || this.state.focused == d[d.length-1].t 
+      || this.state.selected.has(d[d.length-1].t) ?
       coloringFunction(d) : "lightgrey"
-    const colorFunctionNext = d => !this.state.focused || this.state.focused == d[0].t ?
+    const colorFunctionNext = d => !this.state.focused || this.state.focused == d[0].t 
+      || this.state.selected.has(d[0].t) ?
       coloringFunction(d) : "lightgrey"
 
     this.nodes.neighborLines

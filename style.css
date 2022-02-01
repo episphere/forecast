@@ -28,10 +28,13 @@ body {
 }
 
 .params {
-  margin-top: 15px;
+  margin-top: 30px;
   display: flex;
   font-size: .8em;
-
+  padding: 10px;
+  background-color: #fff5f2;
+  border-radius: 5px;
+  width: fit-content;
 }
 
 .param-input {
@@ -45,7 +48,18 @@ body {
 }
 
 .plots {
-  margin-top: 20px;
+  /* margin-top: 20px; */
+  float: left;
+}
+
+.plot-row {
+  /* display: flex;
+  clear: both;
+  flex-direction: row; */
+  /* height: fit-content; */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 a {
@@ -61,16 +75,34 @@ h1 {
 }
 
 .plot-label {
-  color: grey;
+  color: rgb(63, 63, 63);
+  font-weight: bold;
+}
+
+.tick line {
+  visibility: hidden;
 }
 
 g {
-  font-size: 0.8em;
-  font-family: "Helvetica"
+  /* font-size: 0.8em; */
+  font-family: "Helvetica";
+}
+
+.plot {
+  position: relative;
+  float: left;
+}
+
+.plot-select {
+  position: absolute;
+  top: 0px;
+  right: 30px;
 }
 
 .slidecontainer {
   width: 60px;
+  margin-top: 8px;
+  z-index: 10;
   /* margin-left: 10px; */
   /* margin-top: 8px; */
 }
@@ -119,13 +151,16 @@ g {
   display: inline-block;
   line-height: 37px;
   text-align: center;
-  text-alight: mid;
+  text-align: middle;
   vertical-align: middle;
 }
 
 
 .time-control {
-  display: flex;
+  display: block;
+  position: absolute;
+  top: 334px;
+  right: 495px;
 }
 
 #plot_ts {

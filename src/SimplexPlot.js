@@ -27,7 +27,7 @@ export class SimplexPlot extends Plot {
   }
 
   setDefaults() {
-    this.tRange = d3.extent(this.forecasts().get(), d => d.baseT)
+    this.tRange = d3.extent(this.forecasts, d => d.baseT)
     if (this.tRangePlot == null) {
       this.tRangePlot = this.tRange
     }
@@ -35,7 +35,7 @@ export class SimplexPlot extends Plot {
 
   updateForecasts(forecasts) {
     this.forecasts = forecasts
-    this.tp = d3.extent(this.forecasts().get(), d => d.tp)[1]
+    this.tp = d3.extent(this.forecasts, d => d.tp)[1]
 
     this.setDefaults()
 
@@ -66,10 +66,10 @@ export class SimplexPlot extends Plot {
       .y(d => this.scaleY(d[this.vField]))
 
     const allValues = []
-    this.forecasts().get().filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]).forEach(d => {
+    this.forecasts.filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]).forEach(d => {
       allValues.push(d.yh)
     })
-    this.data().get().filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]).forEach(d => {
+    this.data.filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]).forEach(d => {
       allValues.push(d[this.vField])
     })
 
@@ -80,7 +80,7 @@ export class SimplexPlot extends Plot {
 
 
     this.scaleXDate = d3.scaleUtc()
-      .domain(d3.extent(this.data().get().filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]), d => d.date)) // TODO: Fix
+      .domain(d3.extent(this.data.filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]), d => d.date)) // TODO: Fix
       .range([this.margin.left, this.width - this.margin.right])
       //.nice()
 
@@ -88,7 +88,7 @@ export class SimplexPlot extends Plot {
     this.scaleY = d3.scaleLinear()
       .domain(d3.extent(allValues))
       .range([this.height - this.margin.bottom, this.margin.top])
-      //.nice(
+      //.nice()
 
 
     this.nodes.axisX = this.nodes.base.append("g")
@@ -165,21 +165,19 @@ export class SimplexPlot extends Plot {
   }
 
   updatePlotT() {
-    this.now = this.forecasts({baseT: this.state.plotT, tp: this.state.plotTp}).first()
-    //const meanDistance = d3.mean(this.now.neighbors, d => d.distance)
-    //this.weights = this.now.neighbors.map(d => Math.exp(-this.now.theta * d.distance / meanDistance))
+    this.now = this.forecasts.find(d => d.baseT == this.state.plotT && d.tp == this.state.plotTp)
 
     this.nodes.paths.selectAll("*").remove()
     
     this.nodes.paths.append("path")
-      .datum(this.data().get().filter(d => d.t >= this.state.plotT && d.t <= this.tRangePlot[1]))
+      .datum(this.data.filter(d => d.t >= this.state.plotT && d.t <= this.tRangePlot[1]))
       .attr("d", this.line)
       .attr("stroke", "lightgrey")
       .attr("stroke-width", 1)
       .attr("fill", "none")
     
     this.nodes.paths.append("path")
-      .datum(this.data().get().filter(d => d.t <= this.state.plotT))
+      .datum(this.data.filter(d => d.t <= this.state.plotT))
       .attr("d", this.line)
       .attr("stroke", "grey")//"darkseagreen")
       .attr("stroke-width", 2)
@@ -187,9 +185,8 @@ export class SimplexPlot extends Plot {
 
     const neighbors = new Map()
     this.neighborsFrom = new Map()
-    //for (const forecast of this.forecasts({baseT: this.state.plotT}).get()) {
 
-    for (const forecast of this.forecasts({baseT: this.state.plotT}).get()) {
+    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
       for (const neighbor of forecast.neighbors) {
         let from = this.neighborsFrom.get(neighbor.t)
         if (from == null) {
@@ -203,13 +200,10 @@ export class SimplexPlot extends Plot {
     }
     this.neighbors = [...neighbors.values()]
 
-    // this.neighbors = this.now.neighbors.map(d => 
-    //   ({...this.data({t: d.t}).first(), dist: d.distance}))
-    const nowPoint = this.data({t: this.now.baseT}).first()
+    const nowPoint = this.data.find(d => d.t == this.now.baseT)
     this.points = this.neighbors.concat([{
       ...nowPoint
     }])
-
     
     this.nodes.neighbors.selectAll("circle")
       .data(this.neighbors)
@@ -217,12 +211,14 @@ export class SimplexPlot extends Plot {
         .attr("id", (d, i) => `neighbor_${i}`)
         .attr("cx", d => this.scaleX(d.t))
         .attr("cy", d => this.scaleY(d[this.vField]))
+        .attr("stroke", "brown")
+        .attr("stroke-width", 1)
 
     const neighborLines = []
     for (const [i, neighbor] of this.neighbors.entries()) {
       const neighborLine = []
       for (let to = 0; to > -this.now.E; to--) {
-        const neigh = this.data({t: neighbor.t + to}).first()
+        const neigh = this.data.find(d => d.t == neighbor.t + to)
         neighborLine.push({t: neighbor.t + to, [this.vField]: neigh[this.vField]})
       }
       neighborLines.push(neighborLine)
@@ -230,7 +226,7 @@ export class SimplexPlot extends Plot {
 
     const nowLine = []
     for (let to = 0; to > -this.now.E; to--) {
-      const now = this.data({t: nowPoint.t + to}).first()
+      const now = this.data.find(d => d.t == nowPoint.t + to)
       nowLine.push({t: now.t, [this.vField]: now[this.vField]})
     }
     
@@ -250,18 +246,18 @@ export class SimplexPlot extends Plot {
       .join("path")
         .attr("d",  this.line)
         .attr("stroke-width", 3)
-        .attr("stroke", "purple")  
+        .attr("stroke", "blue")  
         .attr("fill", "none")
         .style("visibility", "hidden")
     
     this.nodes.now
       .selectAll("circle")
-      .data([this.data({t: this.now.baseT}).first()])
+      .data([this.data.find(d => d.t == this.now.baseT)])
       .join("circle")
         .attr("cx", d => this.scaleX(d.t))
         .attr("cy", d => this.scaleY(d[this.vField]))
         .attr("r", 2)
-        .attr("fill", "purple")
+        .attr("fill", "blue")
 
 
     const projLines = []
@@ -285,7 +281,7 @@ export class SimplexPlot extends Plot {
           baseT: neighbor.t,
           w: neighbor.w,
           t: this.state.plotT + tpi, 
-          [this.vField]: this.data({t: neighbor.t + tpi}).first()[this.vField]
+          [this.vField]: this.data.find(d => d.t == neighbor.t + tpi)[this.vField]
         })
       }
       projLines.push(projLine)
@@ -301,9 +297,9 @@ export class SimplexPlot extends Plot {
         .attr("fill", "none") 
 
 
-    let forecastLine = []//[this.data({t: this.state.plotT}).first()]
+    let forecastLine = []
     if (this.plotAllTp) {
-      for (const forecast of this.forecasts({baseT: this.state.plotT}).get()) {
+      for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
         forecastLine.push({t: forecast.t, [this.vField]: forecast.yh})
       }
     } else {
@@ -325,7 +321,7 @@ export class SimplexPlot extends Plot {
         .attr("x", d => this.scaleX(d + this.state.plotT  - 1))
 
     const nexts = []
-    for (const forecast of this.forecasts({baseT: this.state.plotT}).get()) {
+    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
       for (const next of forecast.nexts) {
         nexts.push({baseT: next.baseT, t: this.state.plotT + forecast.tp, tp: forecast.tp,
           [this.vField]: next[this.vField], w: next.w}) 
@@ -431,7 +427,7 @@ export class SimplexPlot extends Plot {
         //tickFilter: (d, i) => i % 2 == 0,
       })
     } else {
-      this.createAxisBottom(this.nodes.axisX, this.scaleX, "t")
+      this.createAxisBottom(this.nodes.axisX, this.scaleX, "t (week)") // TODO: Make "t"
     }
   }
 

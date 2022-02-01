@@ -5,10 +5,10 @@
 <head>
     <meta charset="utf-8">
 
-    <script src="js/lib/d3/d3.min.js"></script>
-    <script src="js/lib/taffydb/taffy.js"></script>
-    <script src="js/lib/gaussian.js"></script>
-    <script src="js/forecast.js"></script>
+    <script src="src/lib/d3/d3.min.js"></script>
+    <script src="src/lib/taffydb/taffy.js"></script>
+    <script src="src/lib/gaussian.js"></script>
+    <!-- <script src="src/forecast.js"></script> -->
 
     <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" 
       rel="stylesheet" 
@@ -27,7 +27,7 @@
     <span class="top-element"> [<a href="https://github.com/episphere/forecast">code</a>] </span>
   </div>
 
-  
+<!--   
   <div class="file-select" style="visibility: hidden;">
       <input type="file" id="file">
      
@@ -40,9 +40,40 @@
       <label for="value-field">Strat. Field: </label>
       <select name="value-field" id="value-field"> </select>
     
+  </div> -->
+
+
+
+  <div class="plots">
+
+    <div class="plot-row">
+      <div class="plot">
+        <div id="plot_ts" ></div>
+        <div class="time-control"> 
+          <!-- <span class="dot"><span class="material-icons">play_arrow</span></span> -->
+          <div id="time-slider-container" class="slidecontainer"> </div>
+        </div>
+      </div>
+      <div class="plot">
+        <div id="plot_alt"></div>
+      </div>
+    </div>
+
+  <div class="plot-row">
+      <div class="plot">
+        <div id="plot_phase"></div>
+      </div>
+      <div class="plot">
+
+      </div>
+      <div class="plot" style="margin-left: auto"> <!--TODO: Remove this style workaround -->
+        <div id="plot_weight"></div>
+      </div>
+      <div style="clear:both;"></div>
+    </div>
   </div>
 
-  <div class="params">
+  <div class="params" style="visibility: hidden;">
     <div  class="param-input">
       <label for="E">Embedding</label></br>
       <input id="param-input-E" type="number" id="E" value=6>
@@ -58,21 +89,6 @@
       <input id="param-input-theta" type="number" id="theta" value=1.0>
     </div>
   </div>
-
-  <div class="plots">
-    <div id="plot_ts"></div>
-    <div id="plot_alt"></div>
-  </div>
-
-  
-
-  <div class="time-control"> 
-    <!-- <span class="dot"><span class="material-icons">play_arrow</span></span> -->
-    <div id="time-slider-container" class="slidecontainer">
-    </div>
-  </div>
-  
-
 
   <!-- <div class="data">
     <label for="data">Choose data:</label>
@@ -98,6 +114,5 @@
     crossorigin="anonymous"></script>
 </body>
 
-<!-- <script src="js/test.js" type="module"></script> -->
-<script src="js/index.js" type="module"></script>
+<script src="src/main.js" type="module"></script>
 </html>

@@ -39,7 +39,7 @@ export class Plot {
       .attr("fill", "currentColor")
       .attr("transform", `translate(${-this.margin.left}, 20)`)
 
-    axis.call(d3.axisLeft(scale))
+    axis.call(d3.axisLeft(scale).tickSizeInner(3))
 
     const colorShade = 100
     const color = `rgb(${colorShade}, ${colorShade}, ${colorShade})`
@@ -57,7 +57,7 @@ export class Plot {
     tickFilter: () => true,
     tickFormat: null
   }) {
-    const axis = node.attr("transform",  `translate(0, ${this.height - this.margin.bottom})`)
+    const axis = node.attr("transform",  `translate(0, ${this.height - this.margin.bottom-3})`)
 
     if (label == null) {
       label = ""
@@ -148,7 +148,6 @@ export class Plot {
       min - norm.ppf(0.999)*h,
       max + norm.ppf(0.999)*h
     ]
-    console.log(h, hp, domain)
     const step = (domain[1] - domain[0]) / n
     
     const wt = XW.reduce((t, x) => t + x[1], 0)

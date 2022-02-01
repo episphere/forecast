@@ -1,72 +1,6 @@
 
-// function simplex(dataEmbed, vField, t, tp, E, tau, nn, theta, opts = {}) {
-//   opts = {
-//     diffMode: false,
-//     trainRange: null,
-//     ...opts
-//   }
 
-//   if (opts.trainRange == null) {
-//     opts.trainRange = [1, t - tp] 
-//   }
- 
-//   const trainEmbed = dataEmbed.filter(d => d.t >= opts.trainRange[0] && d.t <= opts.trainRange[1] && d.t != t)
-
-//   // TODO: Maybe re-add tree, depends on efficieny at large number of points
-//   //const dims = Array.from({length: E}, (_,i) => `${vField}_t-${i}`)
-//   //dims.push("point")
-//   //const tree =  new kdTree.kdTree([...trainEmbed], (a, b) => math.distance(a["point"], b["point"]), dims)
-  
-//   const vT = get(dataEmbed, t)
-//   const distances = trainEmbed.filter(d => d.t != vT.t).map(d => [d, distance(d.point, vT.point)])
-//   distances.sort((a, b) => a[1] - b[1])
-//   let neighbors = distances.slice(0, Math.min(trainEmbed.length, nn))
-
-//   //let neighbors = tree.nearest(vT, Math.min(trainEmbed.length, nn)).filter(d => d[0].t != t)
-  
-//   const w = Array.from({length: nn}, () => 0)
-//   const meanDistance = d3.mean(neighbors, d => d[1])  
-//   for (let i = 0; i < Math.min(neighbors.length, nn); i++) {
-//     //const dist = math.distance(neighbors[i][0].point, vT.point)
-//     const dist = neighbors[i][1]
-//     w[i] = Math.exp(-theta * dist / meanDistance)
-//     neighbors[i][0].w = w[i]
-//   }
-  
-//   const nexts = neighbors.map(d => ({
-//     ...get(dataEmbed, d[0].t + tp),
-//     baseT: d[0].t, 
-//     w: d[0].w,
-//   }))
-  
-//   neighbors = neighbors.map(d => ({...d[0], distance: d[1]}))
-    
-//   let totalYh = 0
-//   let totalW = 0
-//   let yh = null
-  
-//   if (opts.diffMode) {
-//     for (const [i, next] of nexts.entries()) {
-//       const wi = w[i]
-//       totalW += wi
-//       totalYh += (next[vField] - neighbors[i][vField])
-//     }
-    
-//     yh = vT[vField] + totalYh / totalW
-//   } else {
-//     for (const [i, next] of nexts.entries()) {
-//       const wi = w[i]
-//       totalW += wi
-//       totalYh += wi * next[vField]
-//     }
-    
-//     yh = totalYh / totalW
-//   }
-    
-//   return {t: t + tp, yh: yh, neighbors: neighbors, nexts: nexts}
-// }
-
-function simplex(dataEmbed, vField, t, tp, E, tau, nn, theta, opts = {}) {
+export function simplex(dataEmbed, vField, t, tp, E, tau, nn, theta, opts = {}) {
   opts = {
     diffMode: false,
     trainRange: null,
@@ -81,23 +15,15 @@ function simplex(dataEmbed, vField, t, tp, E, tau, nn, theta, opts = {}) {
  
   const trainEmbed = dataEmbed.filter(d => d.t >= opts.trainRange[0] && d.t <= opts.trainRange[1] && d.t != t)
 
-  // TODO: Maybe re-add tree, depends on efficieny at large number of points
-  //const dims = Array.from({length: E}, (_,i) => `${vField}_t-${i}`)
-  //dims.push("point")
-  //const tree =  new kdTree.kdTree([...trainEmbed], (a, b) => math.distance(a["point"], b["point"]), dims)
   
-  // TODO: Remove bias towards more recent neighbors (due to overlap)
   const vT = get(dataEmbed, t)
   const distances = trainEmbed.filter(d => d.t != vT.t).map(d => [d, distance(d.point, vT.point)])
   distances.sort((a, b) => a[1] - b[1])
   let neighbors = distances.slice(0, Math.min(trainEmbed.length, nn))
-
-  //let neighbors = tree.nearest(vT, Math.min(trainEmbed.length, nn)).filter(d => d[0].t != t)
   
   const w = Array.from({length: nn}, () => 0)
   const meanDistance = d3.mean(neighbors, d => d[1])  
   for (let i = 0; i < Math.min(neighbors.length, nn); i++) {
-    //const dist = math.distance(neighbors[i][0].point, vT.point)
     const dist = neighbors[i][1]
     w[i] = Math.exp(-theta * dist / meanDistance)
     neighbors[i][0].w = w[i]
@@ -110,11 +36,6 @@ function simplex(dataEmbed, vField, t, tp, E, tau, nn, theta, opts = {}) {
   }))
   
   neighbors = neighbors.map(d => ({...d[0], distance: d[1]}))
-
-  // if (t == 239) {
-  //   const sorted = neighbors.sort((a, b) => a.t - b.t)
-  //   console.log(t, sorted.map(d => d.t), sorted.map(d => d.distance))
-  // }
     
   let totalYh = 0
   let totalVectorYh = Array.from({length: vT.point.length}, () => 0)
@@ -141,11 +62,10 @@ function simplex(dataEmbed, vField, t, tp, E, tau, nn, theta, opts = {}) {
     totalVectorYh
   }
       
-  //console.log(totalVectorYh, totalW, divide(totalVectorYh, totalW))
   return {t: t + tp, yh: yh, neighbors: neighbors, yhVector: divide(totalVectorYh, totalW), nexts: nexts}
 }
 
-function delayEmbed(data, fields, dim, args={}) {
+export function delayEmbed(data, fields, dim, args={}) {
   args = {
     tau: 1, 
     zField: null, 
