@@ -37,7 +37,7 @@ export class Plot {
       .text("↑ " + label)
       .attr("text-anchor", "start")
       .attr("fill", "currentColor")
-      .attr("transform", `translate(${-this.margin.left}, 20)`)
+      .attr("transform", `translate(${-this.margin.left}, 10)`)
 
     axis.call(d3.axisLeft(scale).tickSizeInner(3))
 

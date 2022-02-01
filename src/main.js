@@ -81,7 +81,7 @@ Promise.all([dataPromise]).then(datas => {
     state: simplexPlot.state,
     weightColoring: true,
     width: 340, height: 340, 
-    margin: {left: 60, right: 30, top: 35, bottom: 30}
+    margin: {left: 60, right: 30, top: 20, bottom: 30}
   })
 
   const distancePlot = new DistancePlot(document.getElementById("plot_weight"), forecastsBase, vField, {
@@ -89,7 +89,7 @@ Promise.all([dataPromise]).then(datas => {
     weightColoring: true,
     weightColorFunction: embedPlot.weightColorScale,
     width: 340, height: 340, 
-    margin: {left: 60, right: 30, top: 35, bottom: 30}
+    margin: {left: 60, right: 30, top: 20, bottom: 30}
   })
 
 
