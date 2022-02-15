@@ -324,6 +324,12 @@ export class EmbedPlot extends Plot {
     //   .attr("visibility", this.showDates ?  "visible" : "hidden")
   }
 
+
+  setWeightColoring(weightColoring) {
+    this.weightColoring = weightColoring
+    this.updateInteraction()
+  }
+
   stateChanged(p, v) {
     if (p == "plotT" || p == "plotTp") {
       this.updatePlotT()

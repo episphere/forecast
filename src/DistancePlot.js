@@ -154,10 +154,15 @@ export class DistancePlot extends Plot {
 
   updateInteraction() {
     const colorFunction = d => !this.state.focused || this.state.focused == d.t || this.state.selected.has(d.t)?
-      this.weightColorFunction(d.w) : "lightgrey"
+      (this.weightColoring ? this.weightColorFunction(d.w) : "red") : "lightgrey"
 
     this.nodes.bars.selectAll("rect")
       .attr("fill", colorFunction)
+  }
+
+  setWeightColoring(weightColoring) {
+    this.weightColoring = weightColoring
+    this.updateInteraction()
   }
 
   stateChanged(property, value) {

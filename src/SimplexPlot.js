@@ -433,7 +433,7 @@ export class SimplexPlot extends Plot {
         //tickFilter: (d, i) => i % 2 == 0,
       })
     } else {
-      this.createAxisBottom(this.nodes.axisX, this.scaleX, "t (week)") // TODO: Make "t"
+      this.createAxisBottom(this.nodes.axisX, this.scaleX, "t") 
     }
   }
 

@@ -268,10 +268,12 @@ export class PhasePlot extends Plot {
     this.nodes.nextsArrows.selectAll("path")
       .attr("visibility", d => this.checkFocus(d[1].baseT, true) ? 
         "visible" : "hidden")
+      .attr("stroke", this.weightColoring ? d => this.weightColorScale(d[1].w) : "red")
     
     this.nodes.nextsPhase.selectAll("path")
       .attr("visibility", d => this.checkFocus(d[1].baseT, true) ? 
         "visible" : "hidden")
+      .attr("stroke", this.weightColoring ? d => this.weightColorScale(d[1].w) : "red")
   }
 
   setWeightColoring(weightColoring) {

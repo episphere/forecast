@@ -81,30 +81,69 @@
       </div><div class="plot"><div id="plot_alt"></div></div>
     </div>
 
-  <div class="plot-row">
-      <div class="plot"><div id="plot_phase"></div></div>
-      <div class="plot"> <div id="plot_weight"></div></div>
-      <!-- <div style="clear:both;"></div> -->
+    <div class="plot-row">
+        <div class="plot"><div id="plot_phase"></div></div>
+
+        <div class="params">
+            <div>
+              <label for="E">Embedding:</label>
+              <input id="param-input-E" type="number" id="E" value=6>
+            </div>
+
+            <div>
+              <label for="nn">Neighbors:</label>
+              <input id="param-input-nn" type="number" id="nn" value=8>
+            </div>
+
+            <div>
+              <label for="nn">Theta:</label>
+              <input id="param-input-theta" type="number" id="nn" value=1.0>
+            </div>
+
+            <div>
+              <label for="nn">Horizon:</label>
+              <input id="param-input-tp" type="number" id="nn" value=16 disabled> 
+            </div>
+
+            <div>
+              <label for="nn">Kernel Width:</label>
+              <input id="param-kernel-width" type="number" id="nn" value=1.0 disabled>
+            </div>
+
+            <div>
+              <label for="weight-coloring-toggle"> Weight Coloring</label>
+              <input type="checkbox" id="weight-coloring-toggle" checked>
+            </div>
+
+            <div>
+              <label for="show-dates-toggle">Show Dates</label>
+              <input type="checkbox" id="show-dates-toggle" disabled>
+            </div>
+        </div>
+
+        <div class="plot"> <div id="plot_weight"></div></div>
+        <!-- <div style="clear:both;"></div> -->
+      </div>
     </div>
+
+    <div class="params" style="visibility: hidden;">
+      <div  class="param-input">
+        <label for="E">Embedding</label></br>
+        <input id="param-input-E" type="number" id="E" value=6>
+      </div>
+
+      <div  class="param-input">
+        <label for="nn">Neighbors</label></br>
+        <input id="param-input-nn" type="number" id="nn" value=8>
+      </div>
+
+      <div class="param-input">
+        <label for="theta">Theta</label></br>
+        <input id="param-input-theta" type="number" id="theta" value=1.0>
+      </div>
+    </div>
+
   </div>
-
-  <div class="params" style="visibility: hidden;">
-    <div  class="param-input">
-      <label for="E">Embedding</label></br>
-      <input id="param-input-E" type="number" id="E" value=6>
-    </div>
-
-    <div  class="param-input">
-      <label for="nn">Neighbors</label></br>
-      <input id="param-input-nn" type="number" id="nn" value=8>
-    </div>
-
-    <div class="param-input">
-      <label for="theta">Theta</label></br>
-      <input id="param-input-theta" type="number" id="theta" value=1.0>
-    </div>
-  </div>
-
   <!-- <div class="data">
     <label for="data">Choose data:</label>
     <input type="file" id="data" name="data" accept=".csv">

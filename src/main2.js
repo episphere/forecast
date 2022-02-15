@@ -12,6 +12,8 @@ let nn = 8
 let tau = 1
 let theta = 1
 
+let simplexPlot, embedPlot, phasePlot, distancePlot;
+
 // --- Data loading ---
 
 const tFieldSelect = document.getElementById("tfield-select")
@@ -72,6 +74,10 @@ function updateData(newData) {
 }
 
 function runData(data) {
+  const E = parseInt(document.getElementById("param-input-E").value)
+  const nn = parseInt(document.getElementById("param-input-nn").value)
+  const theta = parseFloat(document.getElementById("param-input-theta").value)
+
   const vField = vFieldSelect.value
   const sField = sFieldSelect.value 
 
@@ -91,25 +97,25 @@ function runData(data) {
     forecast.kdeRes = kde(VW, null, 0.1)
   }
   
-  const simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), data, forecasts, vField, {
+  simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), data, forecasts, vField, {
     width: 520, height: 340,
     margin: {left: 60, right: 30, top: 35, bottom: 30},
   })
 
-  const embedPlot = new EmbedPlot(document.getElementById("plot_alt"), data, forecasts, vField, {
+  embedPlot = new EmbedPlot(document.getElementById("plot_alt"), data, forecasts, vField, {
     state: simplexPlot.state,
     width: 340, height: 340, 
     margin: {left: 60, right: 30, top: 35, bottom: 30}
   })
   
   const dataEmbed = delayEmbed(data, [vField], E)
-  new PhasePlot(document.getElementById("plot_phase"), dataEmbed, forecasts, vField, {
+  phasePlot = new PhasePlot(document.getElementById("plot_phase"), dataEmbed, forecasts, vField, {
     state: simplexPlot.state,
     width: 340, height: 340, 
-    margin: {left: 60, right: 30, top: 20, bottom: 30}
+    margin: {left: 60, right: 30, top: 30, bottom: 30}
   })
   
-  new DistancePlot(document.getElementById("plot_weight"), forecasts, vField, {
+  distancePlot = new DistancePlot(document.getElementById("plot_weight"), forecasts, vField, {
     state: simplexPlot.state,
     weightColorFunction: embedPlot.weightColorScale,
     width: 340, height: 340, 
@@ -181,6 +187,28 @@ document.getElementById("data-select").addEventListener("change", e => {
 document.getElementById("run-button").addEventListener("click", () => {
   runData(data)
 })
+
+function updateForecasts() {
+  runData(data)
+}
+
+document.getElementById("param-input-E").addEventListener("input", updateForecasts)
+document.getElementById("param-input-nn").addEventListener("input", updateForecasts)
+document.getElementById("param-input-theta").addEventListener("input", updateForecasts)
+
+const weightToggle = document.getElementById("weight-coloring-toggle")
+weightToggle.addEventListener("input", () => {
+  simplexPlot.setWeightColoring(weightToggle.checked)
+  embedPlot.setWeightColoring(weightToggle.checked)
+  phasePlot.setWeightColoring(weightToggle.checked)
+  distancePlot.setWeightColoring(weightToggle.checked)
+})
+
+// const dateToggle = document.getElementById("show-dates-toggle")
+// dateToggle.addEventListener("input", () => {
+//   simplexPlot.setShowDates(dateToggle.checked)
+//   embedPlot.setShowDates(dateToggle.checked)
+// })
 
 // ---------
 
