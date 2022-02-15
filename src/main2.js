@@ -115,6 +115,35 @@ function runData(data) {
     width: 340, height: 340, 
     margin: {left: 60, right: 30, top: 20, bottom: 30}
   })
+
+  createTimeSlider(document.getElementById("time-slider-container"), 
+    simplexPlot.element, simplexPlot.scaleX, simplexPlot.tForecastRange, simplexPlot.state)
+}
+
+function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
+  timeContainer.innerHTML = ""
+
+  const timeSlider = document.createElement("input")
+  timeSlider.setAttribute("type", "range")
+  timeSlider.setAttribute("class", "slider")
+
+  const sliderLeft = plotElement.getBoundingClientRect().left + scaleX(tRange[0]) - 10
+  const sliderWidth = scaleX(tRange[1]) - scaleX(tRange[0]) + 10
+  timeSlider.setAttribute("style", `
+    width: ${sliderWidth}px;
+    position: absolute;
+    left: ${sliderLeft}px;
+  `)
+  timeSlider.setAttribute("min", tRange[0])
+  timeSlider.setAttribute("max", tRange[1])
+  timeSlider.setAttribute("value", state.plotT)
+
+  timeSlider.addEventListener("input", () => {
+    state.plotT = parseInt(timeSlider.value)
+
+  })
+  
+  timeContainer.appendChild(timeSlider)
 }
 
 const collapsibles = document.getElementsByClassName("collapsible")

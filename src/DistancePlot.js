@@ -69,7 +69,6 @@ export class DistancePlot extends Plot {
   }
 
   updatePlotT() {
-    console.log(this.state.plotT, this.state.plotTp)
     this.neighbors = [...this.forecasts.find(d => d.baseT == this.state.plotT 
       && d.tp == this.state.plotTp).neighbors]
     this.neighbors.sort((a, b) => a.t - b.t)

@@ -100,7 +100,7 @@ export class Plot {
   createAxisBottom(node, scale, label, opts={
     tickFilter: () => true,
     tickFormat: null,
-    tickOffset: 0,
+    tickOffset: 5,
   }) {
     const axis = node.attr("transform",  `translate(0, ${this.height - this.margin.bottom-3})`)
 

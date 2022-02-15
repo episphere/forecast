@@ -39,6 +39,7 @@ export class SimplexPlot extends Plot {
     if (this.tRangePlot == null) {
       this.tRangePlot = this.tRange
     }
+    this.tForecastRange = d3.extent(this.forecasts, d => d.baseT)
   }
 
   updateForecasts(forecasts) {

@@ -182,7 +182,8 @@ export class EmbedPlot extends Plot {
 
     this.createAxisBottom(this.nodes.axisX, this.scaleX, "t offset", {
       tickFilter: tick => Number.isInteger(tick),
-      tickFormat: d3.format("d")
+      tickFormat: d3.format("d"),
+      tickOffset: 5,
     })
     this.createAxisLeft(this.nodes.axisY, this.scaleY, this.vField)  
 
