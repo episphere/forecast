@@ -27,6 +27,32 @@
     <span class="top-element"> [<a href="https://github.com/episphere/forecast">code</a>] </span>
   </div>
 
+  <div class="file-select-block">
+    <div class="collapsible">
+      Data Configuration
+      <span class="collapsible-arrow material-icons">arrow_drop_down</span>
+    </div>
+    <div class="content">
+      Upload your data file here. The file must be in CSV or JSON format. The data should consist of a series of rows with at least one time field (with values which are either valid dates or integers) and at least one value field (with values which are numbers). The data can also have a group field. Within each group, the time values should be evenly spaced. 
+      <div class="file-select" >
+        <label for="data-select">Choose a data file:</label>
+        <input type="file" id="data-select" style="display: none;" />
+        <input type="button" value="Browse..." onclick="document.getElementById('data-select').click();" />
+        <label id="data-select-label" class="file-select-label" for="data-select">No file selected</label>
+      </div>
+      <div id="field-selects">
+        <label for="tfield-select">Time Field:</label>
+        <select class="field-select" id="tfield-select" /></select>
+        <label for="vfield-select">Value Field:</label>
+        <select class="field-select" id="vfield-select"></select>
+        <label for="gfield-select">Group Field:</label>
+        <select class="field-select" id="sfield-select"></select>
+      </div>
+      
+      <button  id="run-button" type="button">Run</button>
+    </div>
+  </div>
+
 <!--   
   <div class="file-select" style="visibility: hidden;">
       <input type="file" id="file">
@@ -50,26 +76,15 @@
       <div class="plot">
         <div id="plot_ts" ></div>
         <div class="time-control"> 
-          <!-- <span class="dot"><span class="material-icons">play_arrow</span></span> -->
           <div id="time-slider-container" class="slidecontainer"> </div>
         </div>
-      </div>
-      <div class="plot">
-        <div id="plot_alt"></div>
-      </div>
+      </div><div class="plot"><div id="plot_alt"></div></div>
     </div>
 
   <div class="plot-row">
-      <div class="plot">
-        <div id="plot_phase"></div>
-      </div>
-      <div class="plot">
-
-      </div>
-      <div class="plot" style="margin-left: auto"> <!--TODO: Remove this style workaround -->
-        <div id="plot_weight"></div>
-      </div>
-      <div style="clear:both;"></div>
+      <div class="plot"><div id="plot_phase"></div></div>
+      <div class="plot"> <div id="plot_weight"></div></div>
+      <!-- <div style="clear:both;"></div> -->
     </div>
   </div>
 
@@ -114,5 +129,5 @@
     crossorigin="anonymous"></script>
 </body>
 
-<script src="src/main.js" type="module"></script>
+<script src="src/main2.js" type="module"></script>
 </html>

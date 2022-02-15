@@ -1,16 +1,17 @@
 import { Plot } from "./Plot.js"
+import * as d3 from "https://cdn.skypack.dev/d3@7"
 
 export class SimplexPlot extends Plot {
   
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
-      weightColoring: false,
+      weightColoring: true,
       showDates: false,
       plotAllTp: true,
       showAllProjLines: false,
       showProjShades: true,
       hp: 0.1,
-      hoverRadius: 30, 
+      hoverRadius: 10, 
       tRangePlot: null,
       width: 640, 
       height: 480
@@ -22,12 +23,19 @@ export class SimplexPlot extends Plot {
 
     this.weightColorScale = d3.scaleSequential([0, 1], d3.interpolateReds)//d3.interpolateOrRd)
 
-    this.updateForecasts(forecasts)
-
+    try {
+      this.updateForecasts(forecasts)
+    } catch(error) {
+      this.plotFail()
+      console.error(error)
+    }
+    
+    this.element.append(this.nodes.base.node())
   }
 
   setDefaults() {
-    this.tRange = d3.extent(this.forecasts, d => d.baseT)
+    //this.tRange = d3.extent(this.forecasts, d => d.baseT)
+    this.tRange = d3.extent(this.data, d => d.t)
     if (this.tRangePlot == null) {
       this.tRangePlot = this.tRange
     }
@@ -42,8 +50,7 @@ export class SimplexPlot extends Plot {
     // Dynamic state
     this.state.defineProperty("selected", new Set())
     this.state.defineProperty("focused", null)
-    //this.state.defineProperty("plotT", this.tRangePlot[1] - 8) // TODO: Fix
-    this.state.defineProperty("plotT", 32) // TODO: Fix
+    this.state.defineProperty("plotT", this.tRange[1])
     this.state.defineProperty("plotTp", this.tp)
     this.state.addListener((p, v) => this.stateChanged(p, v))
 
@@ -54,7 +61,7 @@ export class SimplexPlot extends Plot {
   }
 
   createBase() {
-    this.nodes.base = d3.create("svg")
+    this.nodes.base 
       .attr("width", this.width)
       .attr("height", this.height)
       .on("mousemove", e => this.mouseMoved(e))
@@ -78,7 +85,6 @@ export class SimplexPlot extends Plot {
       .range([this.margin.left, this.width - this.margin.right])
       .nice()
 
-
     this.scaleXDate = d3.scaleUtc()
       .domain(d3.extent(this.data.filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]), d => d.date)) // TODO: Fix
       .range([this.margin.left, this.width - this.margin.right])
@@ -88,22 +94,18 @@ export class SimplexPlot extends Plot {
     this.scaleY = d3.scaleLinear()
       .domain(d3.extent(allValues))
       .range([this.height - this.margin.bottom, this.margin.top])
-      //.nice()
-
-
-    this.nodes.axisX = this.nodes.base.append("g")
-      .attr("stroke-width", 1.5)
-    this.nodes.axisY = this.nodes.base.append("g")
-      .attr("stroke-width", 1.5)
-    this.createAxisLeft(this.nodes.axisY, this.scaleY, this.vField)
-
+      .nice()
 
     this.nodes.gridLines = this.nodes.base.append("g")
       .attr("id", "gridlines")
 
     this.createGrid(this.nodes.gridLines, this.scaleX, this.scaleY)
 
-
+    this.nodes.axisX = this.nodes.base.append("g")
+      .attr("stroke-width", 1.5)
+    this.nodes.axisY = this.nodes.base.append("g")
+      .attr("stroke-width", 1.5)
+    this.createAxisLeft(this.nodes.axisY, this.scaleY, this.vField)
 
     this.nodes.paths = this.nodes.base.append("g")
       .attr("fill", "none")
@@ -156,15 +158,12 @@ export class SimplexPlot extends Plot {
       .style("position", "absolute")
       .style("font-size", ".6em")
       .style("width", "fit-content")
-
-    // TODO: Better!
-    while (this.element.firstChild) {
-      this.element.removeChild(this.element.firstChild)
-    }
-    this.element.append(this.nodes.base.node())
+    
+    //this.element.append(this.nodes.base.node())
   }
 
   updatePlotT() {
+
     this.now = this.forecasts.find(d => d.baseT == this.state.plotT && d.tp == this.state.plotTp)
 
     this.nodes.paths.selectAll("*").remove()
@@ -297,14 +296,7 @@ export class SimplexPlot extends Plot {
         .attr("fill", "none") 
 
 
-    let forecastLine = []
-    if (this.plotAllTp) {
-      for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
-        forecastLine.push({t: forecast.t, [this.vField]: forecast.yh})
-      }
-    } else {
-      forecastLine.push({t: this.state.plotT + this.state.plotTp, [this.vField]: this.now.yh})
-    }
+    const forecastLine = this.forecasts.filter(d => d.baseT == this.state.plotT)
   
     this.nodes.predict
       .selectAll("path")
@@ -337,33 +329,46 @@ export class SimplexPlot extends Plot {
         .attr("stroke", "red")
         .attr("fill", "none")
 
+    
+
+    this.kdeResMap = new Map()
+
     const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
-    for (let tpi = 1; tpi <= this.tp; tpi++) {
-      const tpNexts = nexts.filter(d => d.tp == tpi)
-      const VW = tpNexts.map(d => [d[this.vField], d.w])
-      const kdeRes = this.kde(VW, null, this.hp)
-
-     // const kdeRes = [{y: 39900, v: 0}, {y: 40000, v: 1}, {y: 40100, v: 0}]
-
-      // TODO: Remove
-      const tests = [0, 1]
-      const offs = []
-      for (const test of tests) {
-        offs.push({y: test - 0.005, v: 0})
-        offs.push({y: test, v: 1})
-        offs.push({y: test + 0.005, v: 0})
+    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
+      //const VW = forecast.nexts.map(d => [d[this.vField], d.w])
+      //const kdeRes = this.kde(VW, null, this.hp)
+      const kdeRes = forecast.kdeRes
+      if (forecast.kdeRes) {
+        const gradient = this.nodes.gradients.select(`#gradient-${forecast.tp}`)
+        gradient.selectAll("stop")
+          .data(kdeRes.vs.reverse())
+          .join("stop")
+            .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
+            .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
+        this.kdeResMap.set(forecast.tp, kdeRes)
       }
-
-      const gradient = this.nodes.gradients.select(`#gradient-${tpi}`)
-      gradient.selectAll("stop")
-        .data(kdeRes.reverse())
-        //.data(offs)
-        .join("stop")
-          .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
-          //.attr("offset", d => d.y)
-          .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
-
+      
     }
+
+    // const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
+    // for (let tpi = 1; tpi <= this.tp; tpi++) {
+    //   const tpNexts = nexts.filter(d => d.tp == tpi)
+    //   const VW = tpNexts.map(d => [d[this.vField], d.w])
+    //   const kdeRes = this.kde(VW, null, this.hp)
+    //   this.kdeResMap.set(tpi, kdeRes)
+
+    //  // const kdeRes = [{y: 39900, v: 0}, {y: 40000, v: 1}, {y: 40100, v: 0}]
+
+    //   const gradient = this.nodes.gradients.select(`#gradient-${tpi}`)
+    //   gradient.selectAll("stop")
+    //     .data(kdeRes.reverse())
+    //     //.data(offs)
+    //     .join("stop")
+    //       .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
+    //       //.attr("offset", d => d.y)
+    //       .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
+
+    // }
 
 
     // for (let tpi = 1; tpi <= this.tp; tpi++) {
@@ -502,8 +507,8 @@ export class SimplexPlot extends Plot {
 
       const values = [
         ["t", neighbor.t],
-        ["date", neighbor.date.toISOString().slice(0, 10)],
-        ["distance", neighbor.distance.toFixed(0)], // TODO: Automatic
+        //["date", neighbor.date.toISOString().slice(0, 10)],
+        ["distance", neighbor.distance.toPrecision(3)], // TODO: Automatic
         ["weight", neighbor.w.toFixed(2)],
         ["tp", this.intListStr(this.neighborsFrom.get(neighbor.t))]
       ]
@@ -513,10 +518,12 @@ export class SimplexPlot extends Plot {
       this.nodes.tooltip.style("left", `70px`)
       this.nodes.tooltip.style("top", `50px`)
       this.nodes.tooltip.style("border-color", "grey") 
+      this.element.style.cursor = "pointer"
     } else {
       this.nodes.tooltip.style("opacity", 0)
       this.nodes.tooltip.style("pointer-events", "none")
       this.state.focused = null
+      this.element.style.cursor = "default"
     }
   } 
 

@@ -1,27 +1,71 @@
 import { DynamicState } from "./DynamicState.js"
+import * as d3 from "https://cdn.skypack.dev/d3@7"
+import {default as gaussian}  from 'https://cdn.skypack.dev/gaussian@1.2.0?min'
 
 export class Plot {
   constructor(element, opts, defaults) {
 
     this.element = element
 
+    while (this.element.firstChild) {
+      this.element.removeChild(this.element.firstChild)
+    }
+
     defaults.state = null
     opts = Object.assign(defaults, opts)
-    Object.assign(this, opts)
+    Object.assign(this, opts)   
 
     if (this.state == null) {
       this.state = new DynamicState()
     } 
 
     if (this.margin == null) {
-      this.margin = {left: 0, right: 0, top: 0, bottom: 0}
+      this.margin = {left: 60, right: 60, top: 60, bottom: 60}
     }
 
+    const className = "fc-plot"
+
     this.nodes = {}
-    
+    this.nodes.base = d3.create("svg")
+      .attr("class", className)
+      .call(svg => svg.append("style").text(`
+        .${className} .tick line {
+          visibility: hidden;
+        }
+
+        .${className} text {
+          color: rgb(63, 63, 63);
+        }
+        
+        .${className} .plot-label {
+          font-weight: bold;
+        }
+
+        .${className} .grid {
+          stroke: rgb(240, 240, 240);
+        }
+        
+        `))
+
   }
 
   // == Tool Functions ==
+
+  plotFail() {
+    console.log("Fail!", this.width, this.height)
+
+    this.nodes.base = d3.create("svg")
+      .attr("width", this.width)
+      .attr("height", this.height)
+    
+    this.nodes.base
+      .append("rect")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("fill", "lightgrey")
+
+    //this.element.append(this.nodes.base.node())
+  }
 
   createAxisLeft(node, scale, label) {
     const axis = node.attr("transform", `translate(${this.margin.left},0)`)
@@ -55,7 +99,8 @@ export class Plot {
 
   createAxisBottom(node, scale, label, opts={
     tickFilter: () => true,
-    tickFormat: null
+    tickFormat: null,
+    tickOffset: 0,
   }) {
     const axis = node.attr("transform",  `translate(0, ${this.height - this.margin.bottom-3})`)
 
@@ -88,7 +133,8 @@ export class Plot {
 
     axis.call(d3.axisBottom(scale)
       .tickValues(ticks)
-      .tickFormat((d, i) => !reduceTicks || i % 2 == 0 ? opts.tickFormat(d) : ""))
+      .tickFormat((d, i) => !reduceTicks || i % 2 == 0 ? opts.tickFormat(d) : "")
+      .tickSizeInner(opts.tickOffset))
       //.attr("stroke", "rgb(63, 63, 63)")
 
     const colorShade = 100
@@ -104,6 +150,8 @@ export class Plot {
   }
 
   createGrid(node, scaleX, scaleY, highlight = () => false) {
+    node.attr("class", "grid")
+
     const line = d3.line() 
       .x(d => scaleX(d.x))
       .y(d => scaleY(d.y))
@@ -123,7 +171,7 @@ export class Plot {
       .join("path")
         .attr("d",  line)
         .attr("stroke-width", d => highlight(d[0].x) ? 1.8 : 0.8)
-        .attr("stroke", "rgb(230, 230, 230)")  
+        //.attr("stroke", "rgb(230, 230, 230)")  
         .attr("fill", "none")
   }
 

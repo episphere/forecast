@@ -16,29 +16,36 @@ export class PhasePlot extends Plot {
     this.vField = vField
 
     this.weightColorScale = d3.scaleSequential([0, 1], d3.interpolateReds)
-    this.updateForecasts(forecasts)
+
+    try {
+      this.updateForecasts(forecasts)
+    } catch(error) {
+      this.plotFail()
+    }
+    
+    this.element.append(this.nodes.base.node())
   }
 
   setDefaults() {
-    this.tRange = d3.extent(this.forecasts().get(), d => d.baseT)
+    this.tRange = d3.extent(this.forecasts, d => d.baseT)
     if (this.tRangePlot == null) {
       this.tRangePlot = this.tRange
     }
     if (this.plotE == null) {
-      this.plotE = this.dataEmbed().first().point.length 
+      this.plotE = this.dataEmbed[0].embed.length 
     }
   }
 
   updateForecasts(forecasts) {
     this.forecasts = forecasts
-    this.tp = d3.extent(this.forecasts().get(), d => d.tp)[1]
+    this.tp = d3.extent(this.forecasts, d => d.tp)[1]
 
     this.setDefaults()
 
     // Dynamic state
     this.state.defineProperty("selected", new Set())
     this.state.defineProperty("focused", null)
-    this.state.defineProperty("plotT", this.tRangePlot[1] - 8) // TODO: Fix
+    this.state.defineProperty("plotT", this.tRange[1])    
     this.state.defineProperty("plotTp", this.tp)
     this.state.addListener((p, v) => this.stateChanged(p, v))
 
@@ -48,7 +55,7 @@ export class PhasePlot extends Plot {
   }
 
   createBase() {
-    this.nodes.base = d3.create("svg")
+    this.nodes.base
       .attr("width", this.width)
       .attr("height", this.height)
 
@@ -73,41 +80,39 @@ export class PhasePlot extends Plot {
     this.nodes.currentPoint = this.nodes.base.append("g")
 
     this.dataPhase = []
-    const dataEmbed = this.dataEmbed().get()
-    for (let i = 0; i < dataEmbed.length - 1; i++) {
-      const d1 = dataEmbed[i]
-      const d2 = dataEmbed[i+1]
+    for (let i = 0; i < this.dataEmbed.length - 1; i++) {
+      const d1 = this.dataEmbed[i]
+      const d2 = this.dataEmbed[i+1]
       const phaseLine = [d1, d2].map(d => ({
-        x: d.point[d1.point.length-1],
-        y: d.point[d1.point.length-this.plotE],
+        x: d.embed[d1.embed.length-1],
+        y: d.embed[d1.embed.length-this.plotE],
         t: d.t
       }))
       this.dataPhase.push(phaseLine)
     }
 
-    this.element.append(this.nodes.base.node())
   }
 
   updatePlotT() {
     this.tRangePlot[1] = this.state.plotT
 
     const allValues = []
-    this.forecasts().get().filter(d => d.t >= this.tRange[0] && d.t <= this.tRange[1]).forEach(d => {
+    this.forecasts.filter(d => d.t >= this.tRange[0] && d.t <= this.tRange[1]).forEach(d => {
       allValues.push(d.yh)
     })
-    this.dataEmbed().get().filter(d => d.t >= this.tRange[0] && d.t <= this.tRange[1]).forEach(d => {
+    this.dataEmbed.filter(d => d.t >= this.tRange[0] && d.t <= this.tRange[1]).forEach(d => {
       allValues.push(d[this.vField])
     })
 
     this.scaleX = d3.scaleLinear()
       .domain(d3.extent(allValues))
       .range([this.margin.left, this.width - this.margin.right])
-      //.nice()
+      .nice()
 
     this.scaleY = d3.scaleLinear()
       .domain(d3.extent(allValues))
       .range([this.height - this.margin.bottom, this.margin.top])
-      //.nice()
+      .nice()
 
     this.createGrid(this.nodes.gridLines, this.scaleX, this.scaleY)
 
@@ -118,7 +123,7 @@ export class PhasePlot extends Plot {
     this.createAxisBottom(this.nodes.axisX, this.scaleX, this.vField + " (t)")
     this.createAxisLeft(this.nodes.axisY, this.scaleY, `${this.vField} (t-${this.plotE})`)
 
-    const nowForecasts = this.forecasts({baseT: this.state.plotT}).get()
+    const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
 
     let neighbors = new Map()
     for (const forecast of nowForecasts) {
@@ -136,10 +141,10 @@ export class PhasePlot extends Plot {
           break
         }
         
-        const d = this.dataEmbed({t: neighbor.t + tpi}).first()
+        const d = this.dataEmbed.find(d => d.t == neighbor.t + tpi)
         nextPhase.push({
-          x: d.point[d.point.length-1], 
-          y: d.point[d.point.length-this.plotE], 
+          x: d.embed[d.embed.length-1], 
+          y: d.embed[d.embed.length-this.plotE], 
           t: d.t,
           w: neighbor.w,
           baseT: neighbor.t
@@ -192,7 +197,7 @@ export class PhasePlot extends Plot {
     const rangeDataPhase = 
       this.dataPhase.filter(d => d[1].t >= this.tRangePlot[0] && d[1].t <= this.tRangePlot[1])
 
-      this.nodes.dataPhase
+    this.nodes.dataPhase
       .selectAll("path")
       .data(rangeDataPhase)
       .join("path")
@@ -248,7 +253,6 @@ export class PhasePlot extends Plot {
 
     this.nodes.currentPoint
       .selectAll("circle")
-      //.data(this.dataEmbed({t: this.state.plotT}).first())
       .data([rangeDataPhase[rangeDataPhase.length-1][1]])
       .join("circle")
         .attr("cx", d => this.scaleX(d.x))

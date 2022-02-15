@@ -4,7 +4,7 @@ export class DistancePlot extends Plot {
   
   constructor(element, forecasts, vField, opts = {}) {
     super(element, opts, {
-      weightColoring: false,
+      weightColoring: true,
       width: 480, 
       height: 480,
       weightColorFunction: d => "red",
@@ -16,14 +16,26 @@ export class DistancePlot extends Plot {
 
     this.state.addListener((p, v) => this.stateChanged(p, v))
 
-    this.createBase()
-    this.updatePlotT()
+    try {
+      this.setDefaults()
+      this.createBase()
+      this.updatePlotT()
+    } catch(error) {
+      console.error(error)
+      this.plotFail()
+    }
+
 
     this.element.append(this.nodes.base.node())
   }
 
+  setDefaults() {
+    this.tp = d3.extent(this.forecasts, d => d.tp)[1]
+    this.tRange = d3.extent(this.forecasts, d => d.baseT)
+  }
+
   createBase() {
-    this.nodes.base = d3.create("svg")
+    this.nodes.base
       .attr("width", this.width)
       .attr("height", this.height)
       .on("click", _ => {
@@ -47,9 +59,17 @@ export class DistancePlot extends Plot {
 
     this.nodes.meanLine = this.nodes.base.append("g")
       .attr("id", "meanLine")
+
+    // Dynamic state
+    this.state.defineProperty("selected", new Set())
+    this.state.defineProperty("focused", null)
+    this.state.defineProperty("plotT", this.tRange[1])    
+    this.state.defineProperty("plotTp", this.tp)
+    this.state.addListener((p, v) => this.stateChanged(p, v))
   }
 
   updatePlotT() {
+    console.log(this.state.plotT, this.state.plotTp)
     this.neighbors = [...this.forecasts.find(d => d.baseT == this.state.plotT 
       && d.tp == this.state.plotTp).neighbors]
     this.neighbors.sort((a, b) => a.t - b.t)
@@ -108,9 +128,12 @@ export class DistancePlot extends Plot {
         .attr("fill", d => this.weightColorFunction(d.w))
         .on("mouseenter", (e,d) => {
           this.state.focused = d.t
+          this.element.style.cursor = "pointer"
+
         })
         .on("mouseleave", (e,d) => {
           this.state.focused = null
+          this.element.style.cursor = "default"
         })
         .on("click", (e, d) => {
           e.stopPropagation()

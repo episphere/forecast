@@ -4,7 +4,7 @@ export class EmbedPlot extends Plot {
   
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
-      distanceColoring: false,
+      weightColoring: true,
       hoverRadius: 30, 
       hp: 0.1,
       width: 640, 
@@ -16,10 +16,22 @@ export class EmbedPlot extends Plot {
     this.vField = vField
 
     this.weightColorScale = d3.scaleSequential([0, 1], d3.interpolateReds)
-    this.updateForecasts(forecasts)
+
+    try {
+      this.updateForecasts(forecasts)
+    } catch(error) {
+      console.error(error)
+      this.plotFail()
+    }
+
+    this.element.append(this.nodes.base.node())
   }
 
   updateForecasts(forecasts) {
+    if (forecasts.length == 0) {
+      throw "No forecasts" 
+    }
+
     this.forecasts = forecasts
     this.tp = d3.extent(this.forecasts, d => d.tp)[1]
 
@@ -28,7 +40,7 @@ export class EmbedPlot extends Plot {
     // Dynamic state
     this.state.defineProperty("selected", new Set())
     this.state.defineProperty("focused", null)
-    this.state.defineProperty("plotT", this.tRange[1] - 8) // TODO: Fix
+    this.state.defineProperty("plotT", this.tRange[1])    
     this.state.defineProperty("plotTp", this.tp)
     this.state.addListener((p, v) => this.stateChanged(p, v))
 
@@ -38,11 +50,11 @@ export class EmbedPlot extends Plot {
   }
 
   setDefaults() {
-    this.tRange = d3.extent(this.forecasts, d => d.t)
+    this.tRange = d3.extent(this.forecasts, d => d.baseT)
   }
 
   createBase() {
-    this.nodes.base = d3.create("svg")
+    this.nodes.base
       .attr("width", this.width)
       .attr("height", this.height)
       .on("mousemove", e => this.mouseMoved(e))
@@ -86,12 +98,6 @@ export class EmbedPlot extends Plot {
       .attr("fill", "none")
       .style("stroke-dasharray", "3 1")
 
-
-    // TODO: Better!
-    while (this.element.firstChild) {
-      this.element.removeChild(this.element.firstChild)
-    }
-    this.element.append(this.nodes.base.node())
   }
 
   updatePlotT() {
@@ -146,7 +152,7 @@ export class EmbedPlot extends Plot {
     
     let predictLine = []
     for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
-      predictLine.push({to: forecast.tp, [this.vField]: forecast.yh})
+      predictLine.push({to: forecast.tp, [this.vField]: forecast[this.vField]})
     }
 
     this.allValues = []
@@ -167,7 +173,7 @@ export class EmbedPlot extends Plot {
     this.scaleY = d3.scaleLinear()
       .domain(d3.extent(this.allValues, d => d[this.vField]))
       .range([this.height - this.margin.bottom, this.margin.top])
-      //.nice()
+      .nice()
 
 
 
@@ -186,8 +192,7 @@ export class EmbedPlot extends Plot {
 
    
     // TODO: Interpolated Delaunay points so lines can be focused on between points
-    this.delaunay = d3.Delaunay.from(
-      this.allValues, 
+    this.delaunay = d3.Delaunay.from( this.allValues, 
       d => this.scaleX(d.to), d => this.scaleY(d[this.vField]))
     
     this.nodes.neighborLines
@@ -281,7 +286,7 @@ export class EmbedPlot extends Plot {
   }
 
   updateInteraction() {
-    const coloringFunction = this.distanceColoring ? 
+    const coloringFunction = this.weightColoring ? 
       d => this.weightColorScale(d[0].w) : d => "red"
 
     const colorFunctionPast = d => !this.state.focused || this.state.focused == d[d.length-1].t 
@@ -332,8 +337,10 @@ export class EmbedPlot extends Plot {
     
     if (dist < this.hoverRadius) {
       this.state.focused = neighbor.baseT
+      this.element.style.cursor = "pointer"
     } else {
       this.state.focused = null
+      this.element.style.cursor = "default"
     }
   }
 

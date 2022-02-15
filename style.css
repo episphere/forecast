@@ -16,7 +16,7 @@ body {
 
 .file-select {
   color: rgb(63, 63, 63);
-  font-size: .8em;
+  /* font-size: .8em; */
 }
 
 .file-select input {
@@ -24,7 +24,7 @@ body {
 }
 
 .file-select label {
-  padding-left: 10px;
+  /* padding-left: 10px; */
 }
 
 .params {
@@ -61,6 +61,7 @@ body {
   flex-wrap: wrap;
   justify-content: space-between;
   padding-top: 15px;
+  gap: 5px;
 }
 
 a {
@@ -91,7 +92,8 @@ g {
 
 .plot {
   position: relative;
-  float: left;
+  /* float: left; */
+  display: inline-block;
 }
 
 .plot-select {
@@ -168,3 +170,52 @@ g {
   float: left;
 }
 
+.collapsible {
+  background-color: brown;
+  color: white;
+  padding-left: 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: .9em;
+  cursor: pointer;
+}
+.collapsible:hover {
+  background-color: #b76d6d;
+}
+.collapsible-arrow {
+  float:right;
+  font-size: 2em;
+  margin-top: -6px;
+  margin-right: 6px;
+}
+.content {
+  padding: 16px;
+  /* padding-left: 12px; */
+  /* padding-right: 12px; */
+  /* padding-top: 8px; */
+  /* padding-bottom: 8px; */
+  font-size: .9em;
+  background-color: #f1f1f1;
+  display: none;
+  overflow: hidden;
+}
+.file-select-block {
+  font-family: Sans-Serif;
+  width: 830px;
+}
+.file-select {
+  margin-top: 12px
+}
+.file-select-label {
+  font-size: .8em;
+  # font-style: italic;
+}
+#field-selects {
+  margin-top: 12px
+}
+#field-selects select {
+  margin-right:22px
+}
+#run-button {
+  margin-top: 12px
+}
