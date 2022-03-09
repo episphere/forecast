@@ -34,6 +34,10 @@ export class PhasePlot extends Plot {
     if (this.plotE == null) {
       this.plotE = this.dataEmbed[0].embed.length 
     }
+
+    this.selects = {
+      next: d3.select()
+    }
   }
 
   updateForecasts(forecasts) {
@@ -71,11 +75,17 @@ export class PhasePlot extends Plot {
 
     this.nodes.dataPhase = this.nodes.phaseLines.append("g")
     this.nodes.nextsPhase = this.nodes.phaseLines.append("g")
+    this.nodes.nexts = this.nodes.phaseLines.append("g")
+      .attr("id", `${this.id}-nexts`)
+      .attr("stroke-width", 1)
+      .attr("fill", "none")
     this.nodes.forecastPhase = this.nodes.phaseLines.append("g")
 
     this.nodes.dataArrows = this.nodes.phaseLines.append("g")
     this.nodes.nextsArrows = this.nodes.phaseLines.append("g")
     this.nodes.forecastArrows = this.nodes.phaseLines.append("g")
+
+
     
     this.nodes.currentPoint = this.nodes.base.append("g")
 
@@ -206,14 +216,53 @@ export class PhasePlot extends Plot {
         .attr("stroke-width", 1)
         .attr("fill", "none")
 
-    this.nodes.nextsPhase
-      .selectAll("path")
-      .data(nextsPhase)
-      .join("path")
-        .attr("d", this.line)
-        .attr("stroke", this.weightColoring ? d => this.weightColorScale(d[0].w) : "red")
-        .attr("stroke-width", 1)
-        .attr("fill", "none")
+    // this.nodes.nextsPhase
+    //   .selectAll("path")
+    //   .data(nextsPhase)
+    //   .join("path")
+    //     .attr("id", d => `${this.id}-nextPhase-${d[0].baseT}`)
+    //     .attr("d", this.line)
+    //     .attr("stroke", this.weightColoring ? d => this.weightColorScale(d[0].w) : "red")
+    //     .attr("stroke-width", 1)
+    //     .attr("fill", "none")
+
+
+    this.nodes.nexts.selectAll("*").remove()
+    for (let i = 0; i < nextsPhase.length; i++) {
+      const nextPhase = nextsPhase[i]
+
+      const nextArrows = []
+      for (let j = 0; j < nextPhase.length-1; j++) {
+        const phase1 = nextPhase[j]
+        const phase2 = nextPhase[j+1]
+  
+        const p1 = {...phase1, x: this.scaleX(phase1.x), y: this.scaleY(phase1.y)}
+        const p2 = {...phase2, x: this.scaleX(phase2.x), y: this.scaleY(phase2.y)}
+  
+        nextArrows.push(this.lineArrowHead([p1, p2], 3, Math.PI/2.4))
+      }
+
+      const gNext = this.nodes.nexts.append("g")
+        .attr("id", `${this.id}-next-${nextPhase[0].baseT}`)
+        .datum({baseT: nextPhase[0].baseT, w: nextPhase[0].w})
+
+
+      const color = this.weightColoring ?this.weightColorScale(nextPhase[0].w) : "red"
+      gNext.selectAll("path")
+        .data(nextArrows)
+        .join("path")
+          .attr("class", `${this.id}-next-arrow`)
+          .attr("d", this.rawLine)
+          .attr("stroke", color)
+
+      gNext.append("path")
+        .datum(nextPhase)
+          .attr("class", `${this.id}-next-phase`)
+          .attr("d", this.line)
+          .attr("stroke", color)
+
+
+    }
 
     this.nodes.forecastPhase
       .selectAll("path")
@@ -233,14 +282,14 @@ export class PhasePlot extends Plot {
     //     .attr("stroke-width", 1)
     //     .attr("fill", "none")
 
-    this.nodes.nextsArrows
-      .selectAll("path")
-      .data(nextsArrows)
-      .join("path")
-        .attr("d", this.rawLine)
-        .attr("stroke", this.weightColoring ? d => this.weightColorScale(d[1].w) : "red")
-        .attr("stroke-width", 1)
-        .attr("fill", "none")  
+    // this.nodes.nextsArrows
+    //   .selectAll("path")
+    //   .data(nextsArrows)
+    //   .join("path")
+    //     .attr("d", this.rawLine)
+    //     .attr("stroke", this.weightColoring ? d => this.weightColorScale(d[1].w) : "red")
+    //     .attr("stroke-width", 1)
+    //     .attr("fill", "none")  
 
     this.nodes.forecastArrows
       .selectAll("path")
@@ -263,7 +312,7 @@ export class PhasePlot extends Plot {
     this.updateInteraction()
   }
 
-  updateInteraction() {
+  updateInteractionOld() {
 
     this.nodes.nextsArrows.selectAll("path")
       .attr("visibility", d => this.checkFocus(d[1].baseT, true) ? 
@@ -274,6 +323,45 @@ export class PhasePlot extends Plot {
       .attr("visibility", d => this.checkFocus(d[1].baseT, true) ? 
         "visible" : "hidden")
       .attr("stroke", this.weightColoring ? d => this.weightColorScale(d[1].w) : "red")
+  }
+
+  updateInteraction() {
+    this.selects.next.attr("stroke", "grey")
+    // this.selects.nextPhase.attr("stroke", "grey")
+
+    if (this.state.focused) {
+
+      this.selects.next =
+        this.nodes.nexts.select(`#${this.id}-next-${this.state.focused}`).raise()
+
+      const data = this.selects.next.data()
+      if (data.length > 0) {
+        this.selects.next = this.selects.next.selectAll("*")
+        this.selects.next.attr("stroke", this.weightColoring ? this.weightColorScale(data[0].w) : "red")
+      }
+    } else {
+
+      this.selects.next = this.nodes.nexts.selectAll("*")
+      this.selects.next.selectAll(`.${this.id}-next-phase`).attr("stroke", 
+        d => this.weightColoring ? this.weightColorScale(d[0].w) : "red")
+      this.selects.next.selectAll(`.${this.id}-next-arrow`).attr("stroke", 
+        d => this.weightColoring ? this.weightColorScale(d[1].w) : "red")
+      this.selects.next = this.selects.next.selectAll("*")
+
+      // this.nodes.nexts.selectAll(`.${this.id}-next-arrow`)
+      //   .attr("stroke", d => this.weightColoring ? this.weightColorScale(d[1].w) : "red")
+      // this.nodes.nexts.selectAll(`.${this.id}-next-phase`)
+      //   .attr("stroke", d => this.weightColoring ? this.weightColorScale(d[0].w) : "red")
+
+      // this.selects.next.selectAll("*").selectAll("*")
+    }
+
+    // if (this.state.focused) {
+    //   this.selects.nextPhase = 
+    //     this.nodes.nextsPhase.select(`#${this.id}-nextPhase-${this.state.focused}`)
+
+    //   this.selects.nextPhase.attr("stroke", "red")
+    // }
   }
 
   setWeightColoring(weightColoring) {

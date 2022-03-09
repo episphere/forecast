@@ -1,12 +1,16 @@
 import { Plot } from "./Plot.js"
 import * as d3 from "https://cdn.skypack.dev/d3@7"
 
+// TODO: Double click to change date.
+// TODO: Better proportional coloring.
+// TODO: Minimizable tooltip
 export class SimplexPlot extends Plot {
   
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
       weightColoring: true,
       showDates: false,
+      dateField: null,
       plotAllTp: true,
       showAllProjLines: false,
       showProjShades: true,
@@ -18,6 +22,10 @@ export class SimplexPlot extends Plot {
     })
 
     this.data = data
+    console.log(this.data)
+    if (this.dateField) {
+      this.data.forEach(d => d.___date = new Date(d[this.dateField]))
+    }
     
     this.vField = vField
 
@@ -37,9 +45,18 @@ export class SimplexPlot extends Plot {
     //this.tRange = d3.extent(this.forecasts, d => d.baseT)
     this.tRange = d3.extent(this.data, d => d.t)
     if (this.tRangePlot == null) {
-      this.tRangePlot = this.tRange
+      this.tRangePlot = [this.tRange[0], this.tRange[1] + this.tp]
     }
     this.tForecastRange = d3.extent(this.forecasts, d => d.baseT)
+    this.tForecastRange[0] += 1
+
+    this.selects = {
+      neighborLine: d3.select(),
+      neighbor: d3.select(),
+      nowLine: d3.select(),
+      now: d3.select(),
+      projLine: d3.select()
+    }
   }
 
   updateForecasts(forecasts) {
@@ -63,6 +80,7 @@ export class SimplexPlot extends Plot {
 
   createBase() {
     this.nodes.base 
+      .attr("id", `${this.id}-simplex`)
       .attr("width", this.width)
       .attr("height", this.height)
       .on("mousemove", e => this.mouseMoved(e))
@@ -84,12 +102,25 @@ export class SimplexPlot extends Plot {
     this.scaleX = d3.scaleLinear()
       .domain(this.tRangePlot) 
       .range([this.margin.left, this.width - this.margin.right])
-      .nice()
-
-    this.scaleXDate = d3.scaleUtc()
-      .domain(d3.extent(this.data.filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]), d => d.date)) // TODO: Fix
-      .range([this.margin.left, this.width - this.margin.right])
       //.nice()
+
+    // TODO: Handle dates outside this class.
+    if (this.dateField) {
+      const dateInterval = this.data[1].___date.getTime() - this.data[0].___date.getTime()
+      const dateRange = d3.extent(this.data.filter(d => d.t >= this.tRangePlot[0] && d.t <= this.tRangePlot[1]), 
+        d => d.___date)
+      dateRange[1] = new Date(dateRange[1].getTime()
+        + dateInterval * this.tp)
+
+      console.log(dateRange)
+
+
+      this.scaleXDate = d3.scaleUtc()
+        .domain(dateRange) 
+        .range([this.margin.left, this.width - this.margin.right])
+        //.nice()
+    }
+
 
 
     this.scaleY = d3.scaleLinear()
@@ -98,7 +129,7 @@ export class SimplexPlot extends Plot {
       .nice()
 
     this.nodes.gridLines = this.nodes.base.append("g")
-      .attr("id", "gridlines")
+      .attr("id", `${this.id}-gridlines`)
 
     this.createGrid(this.nodes.gridLines, this.scaleX, this.scaleY)
 
@@ -120,9 +151,23 @@ export class SimplexPlot extends Plot {
     this.nodes.neighborLines = this.nodes.base.append("g")
     this.nodes.neighborRecons = this.nodes.base.append("g")
     this.nodes.nowLine = this.nodes.base.append("g")
+    this.nodes.gradients = this.nodes.base.append("g")
+      .attr("class", "plot-gradient") 
     this.nodes.confRects = this.nodes.base.append("g")
     this.nodes.nexts = this.nodes.base.append("g")
       .attr("visibility", "hidden")
+
+    
+    for (let tpi = 1; tpi <= this.tp; tpi++) {
+      this.nodes.gradients.append("linearGradient")
+        .attr("id", `${this.id}-gradient-${tpi}`)
+        .attr("gradientUnits", "userSpaceOnUse")
+        //.attr("y1", this.margin.top)
+        .attr("y1", this.margin.top)
+        .attr("y2", this.height - this.margin.bottom)
+        .attr("x1", 0)
+        .attr("x2", 0)
+    }
 
     const rectWidth = this.scaleX(1) - this.scaleX(0)
     this.nodes.confRects
@@ -134,19 +179,9 @@ export class SimplexPlot extends Plot {
         .attr("width", rectWidth)
         .attr("height", this.height - this.margin.bottom - this.margin.top)
         //.attr("fill", d => `rgb(${Math.random()*255}, 0, 0, ${Math.random()})`)
-        .attr("fill", d => `url(#gradient-${d})`)
+        .attr("fill", d => `url(#${this.id}-gradient-${d})`)
 
-    this.nodes.gradients = this.nodes.base.append("g") 
-    for (let tpi = 1; tpi <= this.tp; tpi++) {
-      this.nodes.gradients.append("linearGradient")
-        .attr("id", `gradient-${tpi}`)
-        .attr("gradientUnits", "userSpaceOnUse")
-        //.attr("y1", this.margin.top)
-        .attr("y1", this.margin.top)
-        .attr("y2", this.height - this.margin.bottom)
-        .attr("x1", 0)
-        .attr("x2", 0)
-    }
+
 
     this.nodes.tooltip = d3.select(this.element).append("div")
       .style("opacity", 0)
@@ -208,11 +243,14 @@ export class SimplexPlot extends Plot {
     this.nodes.neighbors.selectAll("circle")
       .data(this.neighbors)
       .join("circle")
-        .attr("id", (d, i) => `neighbor_${i}`)
+        .attr("id", (d, i) => `${this.id}-neighbor-${d.t}`)
         .attr("cx", d => this.scaleX(d.t))
         .attr("cy", d => this.scaleY(d[this.vField]))
         .attr("stroke", "brown")
         .attr("stroke-width", 1)
+        .attr("r", 3)
+        .attr("fill", (d) => this.weightColoring ? 
+          this.weightColorScale(d.w) : "red")
 
     const neighborLines = []
     for (const [i, neighbor] of this.neighbors.entries()) {
@@ -234,13 +272,15 @@ export class SimplexPlot extends Plot {
       .selectAll("path")
       .data(neighborLines)
       .join("path")
-        .attr("id", d => `neighbor-${d[d.length-1].t}`)
+        .attr("id", d => `${this.id}-neighborLine-${d[0].t}`)
         .attr("d",  this.line)
         .attr("stroke-width", 1.5)
         .attr("stroke", "red")  
         .attr("fill", "none")
+        .attr("visibility", "hidden")
 
     this.nodes.nowLine
+      .attr("id", `${this.id}-nowLine`)
       .selectAll("path")
       .data([nowLine])
       .join("path")
@@ -251,6 +291,7 @@ export class SimplexPlot extends Plot {
         .style("visibility", "hidden")
     
     this.nodes.now
+      .attr("id", `${this.id}-now`)
       .selectAll("circle")
       .data([this.data.find(d => d.t == this.now.baseT)])
       .join("circle")
@@ -290,11 +331,13 @@ export class SimplexPlot extends Plot {
     this.nodes.projLines.selectAll("path")
       .data(projLines)
       .join("path")
+        .attr("id", d => `${this.id}-projLine-${d[0].baseT}`)
         .attr("d", this.line)
         //.attr("stroke", "pink")
         .attr("stroke", d => `rgb(255, 0, 0, ${d[0].w})`) // TODO: Better
         .attr("stroke-width", 1)
         .attr("fill", "none") 
+        .attr("visibility", "hidden")
 
 
     const forecastLine = this.forecasts.filter(d => d.baseT == this.state.plotT)
@@ -309,9 +352,7 @@ export class SimplexPlot extends Plot {
         .attr("fill", "none")
         .style("stroke-dasharray", "2 1")
 
-    this.nodes.confRects
-      .selectAll("rect")
-        .attr("x", d => this.scaleX(d + this.state.plotT  - 1))
+   
 
     const nexts = []
     for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
@@ -339,52 +380,23 @@ export class SimplexPlot extends Plot {
       //const VW = forecast.nexts.map(d => [d[this.vField], d.w])
       //const kdeRes = this.kde(VW, null, this.hp)
       const kdeRes = forecast.kdeRes
+      const kdeData = [...kdeRes.vs].reverse()
       if (forecast.kdeRes) {
-        const gradient = this.nodes.gradients.select(`#gradient-${forecast.tp}`)
+        const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
         gradient.selectAll("stop")
-          .data(kdeRes.vs.reverse())
+          .data(kdeData)
           .join("stop")
             .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
             .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
+
         this.kdeResMap.set(forecast.tp, kdeRes)
       }
-      
     }
 
-    // const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
-    // for (let tpi = 1; tpi <= this.tp; tpi++) {
-    //   const tpNexts = nexts.filter(d => d.tp == tpi)
-    //   const VW = tpNexts.map(d => [d[this.vField], d.w])
-    //   const kdeRes = this.kde(VW, null, this.hp)
-    //   this.kdeResMap.set(tpi, kdeRes)
-
-    //  // const kdeRes = [{y: 39900, v: 0}, {y: 40000, v: 1}, {y: 40100, v: 0}]
-
-    //   const gradient = this.nodes.gradients.select(`#gradient-${tpi}`)
-    //   gradient.selectAll("stop")
-    //     .data(kdeRes.reverse())
-    //     //.data(offs)
-    //     .join("stop")
-    //       .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
-    //       //.attr("offset", d => d.y)
-    //       .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
-
-    // }
-
-
-    // for (let tpi = 1; tpi <= this.tp; tpi++) {
-    //   const tpNexts = []
-    //   for (const forecast of this.forecasts({baseT: this.state.plotT, tp: tpi}).get()) {
-    //      for (const next of forecast.nexts) {
-    //        tpNexts.push({baseT: next.baseT, w: next.w, t: this.state.plotT + forecast.tp, 
-    //         [this.vField]: next[this.vField]}) 
-    //      }
-    //   }
-
-    //   const D = tpNexts.map(d => [d[this.vField], d.w])
-    //   const kdeRes = this.kde(D, null, this.hp)
-    //   console.log(kdeRes)
-    // }
+    this.nodes.confRects
+      .selectAll("rect")
+        .attr("x", d => this.scaleX(d + this.state.plotT  - 1))
+        .attr("fill", d => `url(#${this.id}-gradient-${d})`)
 
     this.delaunay = 
       d3.Delaunay.from(this.points, d => this.scaleX(d.t), d => this.scaleY(d[this.vField]))
@@ -392,32 +404,36 @@ export class SimplexPlot extends Plot {
   }
 
   updateInteraction() {
+    this.selects.neighborLine.attr("visibility", "hidden")
+    this.selects.neighbor.attr("r", 3)
+    this.selects.nowLine.style("visibility",  "hidden")
+    this.selects.now.attr("r", 3)
+    this.selects.projLine.attr("visibility",  this.showAllProjLines ? "visible" : "hidden")
 
-    this.nodes.neighborLines.selectAll("path")
-      .attr("visibility", d => this.state.focused == d[0].t || 
-        this.state.selected.has(d[0].t) ? "visible" : "hidden")
+    if (this.state.focused) {
+      this.selects.neighbor = 
+        this.nodes.neighbors.select(`#${this.id}-neighbor-${this.state.focused}`) 
+      this.selects.neighborLine = 
+        this.nodes.neighborLines.select(`#${this.id}-neighborLine-${this.state.focused}`) 
+      this.selects.nowLine = this.nodes.nowLine.selectAll("path")
+      this.selects.now = this.nodes.now.selectAll("circle")
+      this.selects.projLine =
+        this.nodes.projLines.select(`#${this.id}-projLine-${this.state.focused}`) 
+      
+      
+      this.selects.neighbor.attr("r", 4)
+      this.selects.neighborLine.attr("visibility", "visible")
+      this.selects.projLine.attr("visibility",  "visible" )
+
+      if (this.state.focused == this.state.plotT) {
+        this.selects.nowLine.style("visibility",  "visible")
+        this.selects.now.attr("r", 4)
+      }
+
+    }
+
     
-    this.nodes.neighbors.selectAll("circle")
-      .attr("r", d => this.state.selected.has(d.t) || this.state.focused == d.t ? "4" : "3")
-      .attr("fill", (d, i) => this.weightColoring ? 
-          this.weightColorScale(d.w) : "red")
-      //.attr("stroke", "red")
-      //.attr("stroke-width", 1)
-      //.attr("fill", "none")
-
-    this.nodes.nowLine
-      .selectAll("path")  
-      .style("visibility", this.now.baseT == this.state.focused ?
-        "visible" : "hidden")
-
-    this.nodes.now
-      .selectAll("circle")
-        .attr("r", this.now.baseT == this.state.focused ? 4 : 3)
-
-    this.nodes.projLines.selectAll("path")
-      .attr("visibility", d => this.showAllProjLines || d[0].baseT == this.state.focused || 
-        this.state.selected.has(d[0].baseT) ? "visible" : "hidden")
-
+   
   }
 
   updatePlotTp(plotT) {
@@ -426,15 +442,19 @@ export class SimplexPlot extends Plot {
 
   setShowDates(showDates){
     this.showDates = showDates
-    if (this.showDates) {
+    if (this.showDates && this.dateField) {
+      console.log("Showing Dates")
       this.createAxisBottom(this.nodes.axisX, this.scaleXDate, "date", {
-        tickFormat: tick => tick.toISOString().slice(0, 4),
+        //tickFormat: tick => tick.toISOString().slice(0, 4),
         tickFilter: d => true
         //tickFilter: (d, i) => i % 2 == 0,
       })
+      this.createGrid(this.nodes.gridLines, this.scaleXDate, this.scaleY)
     } else {
-      this.createAxisBottom(this.nodes.axisX, this.scaleX, "t") 
+      this.createAxisBottom(this.nodes.axisX, this.scaleX, "t")
+      this.createGrid(this.nodes.gridLines, this.scaleX, this.scaleY) 
     }
+
   }
 
   setWeightColoring(weightColoring) {
@@ -453,6 +473,7 @@ export class SimplexPlot extends Plot {
     this.nodes.confRects.style("visibility", showProjShades ? "visible" : "hidden")
   }
 
+  // Should be two value fields, one for previous
   stateChanged(property, value) {
     if (property == "plotT" || property == "plotTp") {
       this.updatePlotT()
@@ -506,25 +527,28 @@ export class SimplexPlot extends Plot {
         return 
       }
 
-      const values = [
-        ["t", neighbor.t],
-        //["date", neighbor.date.toISOString().slice(0, 10)],
+      let values = [["t", neighbor.t]]
+      if (this.dateField) {
+        values.push(["date", neighbor[this.dateField]])
+      }
+      values = values.concat([
         ["distance", neighbor.distance.toPrecision(3)], // TODO: Automatic
         ["weight", neighbor.w.toFixed(2)],
         ["tp", this.intListStr(this.neighborsFrom.get(neighbor.t))]
-      ]
+      ])
 
+      // TODO: FIX: Cursor briefly flashes when changing style.
       this.nodes.tooltip.style("opacity", 1)
       this.nodes.tooltip.html(this.valueTable(values))
       this.nodes.tooltip.style("left", `70px`)
       this.nodes.tooltip.style("top", `50px`)
       this.nodes.tooltip.style("border-color", "grey") 
-      this.element.style.cursor = "pointer"
+      //this.element.style.cursor = "pointer"
     } else {
       this.nodes.tooltip.style("opacity", 0)
       this.nodes.tooltip.style("pointer-events", "none")
       this.state.focused = null
-      this.element.style.cursor = "default"
+      //this.element.style.cursor = "auto"
     }
   } 
 

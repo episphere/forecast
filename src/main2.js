@@ -19,6 +19,7 @@ let simplexPlot, embedPlot, phasePlot, distancePlot;
 const tFieldSelect = document.getElementById("tfield-select")
 const vFieldSelect = document.getElementById("vfield-select")
 const sFieldSelect = document.getElementById("sfield-select")
+const tFieldToggle = document.getElementById("tfield-toggle")
 
 let data = null
 function updateData(newData) {
@@ -80,11 +81,19 @@ function runData(data) {
 
   const vField = vFieldSelect.value
   const sField = sFieldSelect.value 
+  const tField = tFieldSelect.value
 
   if (sField != "NONE") {
     const groups = d3.group(data, d => d[sField])
-    data = [...groups.values()][0]
+    data = [...groups.values()][0] // TODO: Group select 
   }
+
+  dateToggle.disabled = !tFieldToggle.checked
+  if (tFieldToggle.checked) {
+    data.forEach(d => d[tField] = new Date(d[tField]))
+  }
+  data.sort((a, b) => a.t - b.t)
+  data.map((d,i) => d.t = i) // TODO: Don't erase "t" field
 
   for (const row of data) {
     row[vField] = parseFloat(row[vField])
@@ -98,6 +107,7 @@ function runData(data) {
   }
   
   simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), data, forecasts, vField, {
+    dateField: tFieldToggle.checked ? tField : null,
     width: 520, height: 340,
     margin: {left: 60, right: 30, top: 35, bottom: 30},
   })
@@ -144,11 +154,25 @@ function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
   timeSlider.setAttribute("max", tRange[1])
   timeSlider.setAttribute("value", state.plotT)
 
+  const label = document.createElement("label")
+  const labelText = state.plotT + ""
+  label.innerHTML = labelText // TODO: Has to be a better way to do this.
+  label.setAttribute("style", `
+    float: right;
+    font-size: 10px;
+    position: absolute;
+    left: ${sliderLeft - labelText.length*6.5}px;
+    top: 0px;
+  `)
+
   timeSlider.addEventListener("input", () => {
     state.plotT = parseInt(timeSlider.value)
-
+    label.innerHTML = state.plotT + ""
   })
+
+
   
+  timeContainer.appendChild(label)
   timeContainer.appendChild(timeSlider)
 }
 
@@ -192,9 +216,16 @@ function updateForecasts() {
   runData(data)
 }
 
-document.getElementById("param-input-E").addEventListener("input", updateForecasts)
-document.getElementById("param-input-nn").addEventListener("input", updateForecasts)
-document.getElementById("param-input-theta").addEventListener("input", updateForecasts)
+const runParam = document.getElementById("param-run")
+runParam.addEventListener("click", () => {
+  updateForecasts()
+  runParam.innerHTML = "Run"
+})
+
+//document.getElementById("param-input-E").addEventListener("input", updateForecasts)
+document.getElementById("param-input-E").addEventListener("input", () => runParam.innerHTML = "Run*")
+document.getElementById("param-input-nn").addEventListener("input", () => runParam.innerHTML = "Run*")
+document.getElementById("param-input-theta").addEventListener("input", () => runParam.innerHTML = "Run*")
 
 const weightToggle = document.getElementById("weight-coloring-toggle")
 weightToggle.addEventListener("input", () => {
@@ -204,22 +235,23 @@ weightToggle.addEventListener("input", () => {
   distancePlot.setWeightColoring(weightToggle.checked)
 })
 
-// const dateToggle = document.getElementById("show-dates-toggle")
-// dateToggle.addEventListener("input", () => {
-//   simplexPlot.setShowDates(dateToggle.checked)
-//   embedPlot.setShowDates(dateToggle.checked)
-// })
+const dateToggle = document.getElementById("show-dates-toggle")
+dateToggle.addEventListener("input", () => {
+  simplexPlot.setShowDates(dateToggle.checked)
+  //embedPlot.setShowDates(dateToggle.checked)
+})
 
 // ---------
 
 
 d3.json("data/data.json").then(data => {
   updateData(data)
-  tFieldSelect.value = "t"
+  tFieldSelect.value = "date"
   vFieldSelect.value = "deaths"
   sFieldSelect.value = "___s"
   runData(data)
 })
+
 
 // new SimplexPlot(document.getElementById("plot_ts"), [], [], vField, {
 //   width: 520, height: 340,

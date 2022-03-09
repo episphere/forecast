@@ -48,6 +48,12 @@
         <label for="gfield-select">Group Field:</label>
         <select class="field-select" id="sfield-select"></select>
       </div>
+
+      <div style="margin-top: 5px">
+        <input type="checkbox" id="tfield-toggle" checked>
+        <label> Time Field is Date</label><br>
+      </div>
+     
       
       <button  id="run-button" type="button">Run</button>
     </div>
@@ -87,18 +93,20 @@
         <div class="params">
             <div>
               <label for="E">Embedding:</label>
-              <input id="param-input-E" type="number" id="E" value=6>
+              <input id="param-input-E" type="number" value=6>
             </div>
 
             <div>
               <label for="nn">Neighbors:</label>
-              <input id="param-input-nn" type="number" id="nn" value=8>
+              <input id="param-input-nn" type="number" value=8>
             </div>
 
             <div>
               <label for="nn">Theta:</label>
-              <input id="param-input-theta" type="number" id="nn" value=1.0>
+              <input id="param-input-theta" type="number" value=1.0>
             </div>
+
+            <button id="param-run" type="button">Run</button>
 
             <div>
               <label for="nn">Horizon:</label>
@@ -117,7 +125,7 @@
 
             <div>
               <label for="show-dates-toggle">Show Dates</label>
-              <input type="checkbox" id="show-dates-toggle" disabled>
+              <input type="checkbox" id="show-dates-toggle">
             </div>
         </div>
 

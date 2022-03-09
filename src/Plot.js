@@ -1,10 +1,11 @@
 import { DynamicState } from "./DynamicState.js"
 import * as d3 from "https://cdn.skypack.dev/d3@7"
 import {default as gaussian}  from 'https://cdn.skypack.dev/gaussian@1.2.0?min'
+import { nanoid } from 'https://cdn.jsdelivr.net/npm/nanoid/nanoid.js'
 
 export class Plot {
   constructor(element, opts, defaults) {
-
+    this.id = "p"+nanoid(6) // HTML4 IDs can't start with a number
     this.element = element
 
     while (this.element.firstChild) {
@@ -67,23 +68,25 @@ export class Plot {
     //this.element.append(this.nodes.base.node())
   }
 
-  createAxisLeft(node, scale, label) {
+  createAxisLeft(node, scale, label, opts = {
+    tickOffset: 5,
+  }) {
     const axis = node.attr("transform", `translate(${this.margin.left},0)`)
 
     if (label == null) {
       label = ""
     }
 
-    node.select("#label").remove()
+    node.select(`#${this.id}-left-label`).remove()
     axis.append("text")
-      .attr("id", "label")
+      .attr("id", `${this.id}-left-label`)
       .attr("class", "plot-label")
       .text("↑ " + label)
       .attr("text-anchor", "start")
       .attr("fill", "currentColor")
       .attr("transform", `translate(${-this.margin.left}, 10)`)
 
-    axis.call(d3.axisLeft(scale).tickSizeInner(3))
+    axis.call(d3.axisLeft(scale).tickSizeInner(opts.tickOffset))
 
     const colorShade = 100
     const color = `rgb(${colorShade}, ${colorShade}, ${colorShade})`
@@ -97,11 +100,14 @@ export class Plot {
     return axis
   }
 
-  createAxisBottom(node, scale, label, opts={
-    tickFilter: () => true,
-    tickFormat: null,
-    tickOffset: 5,
-  }) {
+  createAxisBottom(node, scale, label, opts={}) {
+    opts = {
+      tickFilter: () => true,
+      tickFormat: null,
+      tickOffset: 5,
+      ...opts
+    }
+
     const axis = node.attr("transform",  `translate(0, ${this.height - this.margin.bottom-3})`)
 
     if (label == null) {
@@ -118,9 +124,9 @@ export class Plot {
     const estTextWidth = 5.4 * maxNumberLength // TODO: Especially fix this bit! 
     const reduceTicks = estTextWidth > (tickSpace - 10)
 
-    node.select("#label").remove()
+    node.select(`#${this.id}-bottom-label`).remove()
     axis.append("text")
-      .attr("id", "label")
+      .attr("id", `${this.id}-bottom-label`)
       .attr("class", "plot-label")
       .text(label + "  →")
       .attr("text-anchor", "end")

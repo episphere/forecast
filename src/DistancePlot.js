@@ -32,9 +32,12 @@ export class DistancePlot extends Plot {
   setDefaults() {
     this.tp = d3.extent(this.forecasts, d => d.tp)[1]
     this.tRange = d3.extent(this.forecasts, d => d.baseT)
+    this.neighbors = [...this.forecasts.find(d => d.baseT == this.state.plotT 
+      && d.tp == this.state.plotTp).neighbors]
   }
 
   createBase() {
+
     this.nodes.base
       .attr("width", this.width)
       .attr("height", this.height)
@@ -44,6 +47,7 @@ export class DistancePlot extends Plot {
       .on("mouseleave", (e,d) => {
         this.state.focused = null
       })
+      
       
 
     this.nodes.gridLines = this.nodes.base.append("g")
@@ -87,9 +91,24 @@ export class DistancePlot extends Plot {
 
     this.scaleX = d3.scaleBand()
       .domain(this.neighbors.map(d => d.t))
-      .rangeRound([this.margin.left, this.width - this.margin.right])
+      .range([this.margin.left, this.width - this.margin.right])
       .paddingInner(0.2)
       .paddingOuter(0.2)
+    // console.log(this.neighbors.map(d => this.scaleX(d.t)))
+    // console.log(this.scaleX.range()[0] + this.scaleX.step()*this.scaleX.paddingOuter())
+    // console.log()
+
+    const hoverStart = this.scaleX.range()[0] + this.scaleX.step()*this.scaleX.paddingOuter()
+    this.nodes.base.on("mousemove", (e) => {
+      // TODO: start is off by a bit.
+      const hovered = this.neighbors[Math.floor((e.offsetX - hoverStart) / this.scaleX.step())]
+      if (hovered) {
+        this.state.focused = hovered.t
+      } else {
+        this.state.focused = null
+      }
+    })
+
 
     const yExtent = d3.extent(this.neighbors, d => d.distance)
     yExtent[0] = 0
@@ -113,7 +132,8 @@ export class DistancePlot extends Plot {
       .attr("fill", "currentColor")
       .attr("transform", `translate(${this.width / 2}, ${this.margin.bottom})`)
 
-    this.createAxisLeft(this.nodes.axisY, this.scaleY, "distance")  
+    // TODO: Add hover over question mark thing.
+    this.createAxisLeft(this.nodes.axisY, this.scaleY, "euclidean distance")  
 
     this.nodes.bars
       .selectAll("rect")
@@ -125,19 +145,19 @@ export class DistancePlot extends Plot {
         .attr("width", this.scaleX.bandwidth())
         .attr("height", d => this.scaleY.range()[0] - this.scaleY(d.distance))
         .attr("fill", d => this.weightColorFunction(d.w))
-        .on("mouseenter", (e,d) => {
-          this.state.focused = d.t
-          this.element.style.cursor = "pointer"
+        // .on("mouseenter", (e,d) => {
+        //   this.state.focused = d.t
+        //   this.element.style.cursor = "pointer"
 
-        })
-        .on("mouseleave", (e,d) => {
-          this.state.focused = null
-          this.element.style.cursor = "default"
-        })
-        .on("click", (e, d) => {
-          e.stopPropagation()
-          this.state.selected.add(d.t)
-        })
+        // })
+        // .on("mouseleave", (e,d) => {
+        //   this.state.focused = null
+        //   this.element.style.cursor = "default"
+        // })
+        // .on("click", (e, d) => {
+        //   e.stopPropagation()
+        //   this.state.selected.add(d.t)
+        // })
 
 
     this.nodes.meanLine.selectAll("*").remove()

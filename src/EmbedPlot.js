@@ -1,11 +1,12 @@
 import { Plot } from "./Plot.js"
 
+// TODO: FIX REDRAWING BUG (also on other plots except TS)
 export class EmbedPlot extends Plot {
   
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
       weightColoring: true,
-      hoverRadius: 30, 
+      hoverRadius: 10, 
       hp: 0.1,
       width: 640, 
       height: 480,
@@ -14,10 +15,12 @@ export class EmbedPlot extends Plot {
 
     this.data = data
     this.vField = vField
+    this.forecasts = forecasts
 
     this.weightColorScale = d3.scaleSequential([0, 1], d3.interpolateReds)
 
     try {
+      this.setDefaults()
       this.updateForecasts(forecasts)
     } catch(error) {
       console.error(error)
@@ -32,10 +35,12 @@ export class EmbedPlot extends Plot {
       throw "No forecasts" 
     }
 
+
     this.forecasts = forecasts
     this.tp = d3.extent(this.forecasts, d => d.tp)[1]
+    
+    this.setWeightColoring(this.weightColoring)
 
-    this.setDefaults()
 
     // Dynamic state
     this.state.defineProperty("selected", new Set())
@@ -51,6 +56,11 @@ export class EmbedPlot extends Plot {
 
   setDefaults() {
     this.tRange = d3.extent(this.forecasts, d => d.baseT)
+
+    this.selects = {
+      neighborLine: d3.select(),
+      nextLine: d3.select(),
+    }
   }
 
   createBase() {
@@ -90,7 +100,7 @@ export class EmbedPlot extends Plot {
     this.nodes.nextLines = this.nodes.base.append("g")
       .attr("fill", "none")
       .style("stroke-dasharray", "3 1")
-    
+
     this.nodes.nowLine = this.nodes.base.append("g")
       .attr("fill", "none")
     
@@ -152,7 +162,7 @@ export class EmbedPlot extends Plot {
     
     let predictLine = []
     for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
-      predictLine.push({to: forecast.tp, [this.vField]: forecast[this.vField]})
+      predictLine.push({to: forecast.tp, [this.vField]: forecast[this.vField], baseT: this.now.baseT+1})
     }
 
     this.allValues = []
@@ -160,6 +170,7 @@ export class EmbedPlot extends Plot {
     nextLines.forEach(d => d.forEach(d => this.allValues.push(d)))
     nowLine.forEach(d => this.allValues.push(d))
     predictLine.forEach(d => this.allValues.push(d))
+    this.allValuesGroup = [...d3.group(this.allValues, d => d.baseT).entries()]
 
     this.scaleX = d3.scaleLinear()
       .domain([-this.now.E+1, this.state.plotTp]) // TODO: Fix
@@ -191,41 +202,48 @@ export class EmbedPlot extends Plot {
       .x(d => this.scaleX(d.to))
       .y(d => this.scaleY(d[this.vField]))
 
-   
-    // TODO: Interpolated Delaunay points so lines can be focused on between points
-    this.delaunay = d3.Delaunay.from( this.allValues, 
-      d => this.scaleX(d.to), d => this.scaleY(d[this.vField]))
+    this.delaunayPoints = []
+    for (const allGroup of this.allValuesGroup) {
+      const delaunayBasePoints = allGroup[1].map((d, i) => 
+        ({x: this.scaleX(d.to), y: this.scaleY(d[this.vField]), baseT: allGroup[0]}))
+      this.interpolate(delaunayBasePoints, this.hoverRadius - 5)
+        .forEach(d => { d.baseT = allGroup[0]; this.delaunayPoints.push(d)})
+    }
+    this.delaunay = d3.Delaunay.from(this.delaunayPoints, 
+      d => d.x, d => d.y)
     
     this.nodes.neighborLines
       .selectAll("path")
       .data(neighborLines)
       .join("path")
-        .attr("id", d => `neighbor-${d[d.length-1].t}`)
-        .attr("d",  this.line)
+        .attr("id", d => `${this.id}-neighborLine-${d[d.length-1].t}`)
+        .attr("d", this.line)
         .attr("stroke-width", 1.5)
+        .attr("stroke", this.coloringFunction)
 
-    this.nodes.neighborLines
-      .selectAll("circle")
-      .data(this.neighbors)
-      .join("circle")
-        .attr("id", d => `neighbor-${d.t}`)
-        .attr("cx",  this.scaleX(0))
-        .attr("cy",  d => this.scaleY(d[this.vField]))
-        .attr("r", 3)
+    // this.nodes.neighborLines
+    //   .selectAll("circle")
+    //   .data(this.neighbors)
+    //   .join("circle")
+    //     .attr("id", d => `neighbor-${d.t}`)
+    //     .attr("cx",  this.scaleX(0))
+    //     .attr("cy",  d => this.scaleY(d[this.vField]))
+    //     .attr("r", 3)
     
     this.nodes.nextLines
       .selectAll("path")
       .data(nextLines)
       .join("path")
-        .attr("id", d => `next-${d[0].t}`)
+        .attr("id", d => `${this.id}-nextLine-${d[0].baseT}`)
         .attr("d", this.line)
         .attr("stroke-width", 2)
+        .attr("stroke", this.coloringFunction)
 
     this.nodes.nowLine
       .selectAll("path")
       .data([nowLine])
       .join("path")
-        .attr("id", `now`)
+        .attr("id", `${this.id}-now`)
         .attr("d", this.line)
         .attr("stroke-width", 3)
         .attr("stroke", "blue")
@@ -264,7 +282,6 @@ export class EmbedPlot extends Plot {
       const VW = tpNexts.map(d => [d[this.vField], d.w])
       const kdeRes = this.kde(VW, null, this.hp)
 
-      //console.log(domainSize, kdeRes.map(d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize))
       const gradient = this.nodes.gradients.select(`#embed-gradient-${tpi}`)
       gradient.selectAll("stop")
         .data(kdeRes.reverse())
@@ -286,33 +303,28 @@ export class EmbedPlot extends Plot {
         .attr("fill", d => `url(#embed-gradient-${d})`)
   }
 
+
   updateInteraction() {
-    const coloringFunction = this.weightColoring ? 
-      d => this.weightColorScale(d[0].w) : d => "red"
+    this.selects.neighborLine.attr("stroke", "grey")
+    this.selects.nextLine.attr("stroke", "grey")
 
-    const colorFunctionPast = d => !this.state.focused || this.state.focused == d[d.length-1].t 
-      || this.state.selected.has(d[d.length-1].t) ?
-      coloringFunction(d) : "lightgrey"
-    const colorFunctionNext = d => !this.state.focused || this.state.focused == d[0].t 
-      || this.state.selected.has(d[0].t) ?
-      coloringFunction(d) : "lightgrey"
+    if (this.state.focused) {
+      this.selects.neighborLine = 
+        this.nodes.neighborLines.select(`#${this.id}-neighborLine-${this.state.focused}`) 
+      this.selects.nextLine =
+        this.nodes.nextLines.select(`#${this.id}-nextLine-${this.state.focused}`) 
 
-    this.nodes.neighborLines
-      .selectAll("path") 
-      .attr("stroke", colorFunctionPast)
-          
-    this.nodes.neighborLines
-      .selectAll("circle")
-      //.attr("fill",  colorFunction)
+      this.selects.neighborLine.attr("stroke", this.coloringFunction).raise()
+      this.selects.nextLine.attr("stroke", this.coloringFunction).raise()
+    } else {
+      this.selects.neighborLine = this.nodes.neighborLines.selectAll("path")
+      this.selects.nextLine = this.nodes.nextLines.selectAll("path")
 
-    this.nodes.nextLines
-      .selectAll("path") 
-      .attr("stroke",  colorFunctionNext)
-
-    for (const raise of [ ...this.state.selected, this.state.focused]) {
-      this.nodes.neighborLines.select(`#neighbor-${raise}`).raise()
-      this.nodes.nextLines.select(`#next-${raise}`).raise()
+      this.selects.neighborLine.attr("stroke", this.coloringFunction)
+      this.selects.nextLine.attr("stroke", this.coloringFunction)
     }
+
+    
   }
 
   setShowDates(showDates) {
@@ -327,23 +339,59 @@ export class EmbedPlot extends Plot {
 
   setWeightColoring(weightColoring) {
     this.weightColoring = weightColoring
-    this.updateInteraction()
+
+    this.coloringFunction = this.weightColoring ? 
+      d => this.weightColorScale(d[0].w) : "red"
+
+    this.colorFunctionPast = d => !this.state.focused || this.state.focused == d[d.length-1].t 
+      || this.state.selected.has(d[d.length-1].t) ?
+      this.coloringFunction(d) : "lightgrey"
+    this.colorFunctionNext = d => !this.state.focused || this.state.focused == d[0].t 
+      || this.state.selected.has(d[0].t) ?
+      this.coloringFunction(d) : "lightgrey"
+
+    if (this.nodes.neighborLines) {
+      this.updateInteraction()
+    }
+  }
+
+  interpolate(points, minDist) {
+    const interPoints = [points[0]]
+  
+    for (let i = 0; i < points.length-1; i++) {
+      const p1 = points[i]
+      const p2 = points[i+1]
+  
+      const d = Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2)
+      const dr = 1 / Math.floor(d / minDist)
+  
+      //const p = [(1 - dr)*p1.x + dr*p2.x, (1 - dr)*p1.y + dr*p2.y]
+      for (let dri = dr; dri < .9999; dri += dr) {
+        interPoints.push({x: (1 - dri)*p1.x + dri*p2.x, y: (1 - dri)*p1.y + dri*p2.y, i: i})
+      }
+      interPoints.push(p2)
+    }
+  
+    return interPoints
   }
 
   stateChanged(p, v) {
     if (p == "plotT" || p == "plotTp") {
       this.updatePlotT()
     }
+    
     this.updateInteraction()
   }
 
   mouseMoved(e) {
-    const neighbor = this.allValues[this.delaunay.find(e.offsetX, e.offsetY)]
-    const p = [this.scaleX(neighbor.to), this.scaleY(neighbor[this.vField])]
-    const dist = Math.hypot(p[0] - e.offsetX, p[1] - e.offsetY)
+    const delaunayPoint = this.delaunayPoints[this.delaunay.find(e.offsetX, e.offsetY)]
+    //const neighbor = this.allValues[delaunayPoint.i]
+    //const p = [this.scaleX(neighbor.to), this.scaleY(neighbor[this.vField])]
+    const dist = Math.hypot(delaunayPoint.x - e.offsetX, delaunayPoint.y - e.offsetY)
+    //console.log({...delaunayPoint, dist:dist})
     
     if (dist < this.hoverRadius) {
-      this.state.focused = neighbor.baseT
+      this.state.focused = delaunayPoint.baseT
       this.element.style.cursor = "pointer"
     } else {
       this.state.focused = null
