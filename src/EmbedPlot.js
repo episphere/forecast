@@ -86,7 +86,7 @@ export class EmbedPlot extends Plot {
       .attr("id", "forecast-gradients") 
     for (let tpi = 1; tpi <= this.tp; tpi++) {
       this.nodes.gradients.append("linearGradient")
-        .attr("id", `embed-gradient-${tpi}`)
+        .attr("id", `${this.id}-gradient-${tpi}`)
         .attr("gradientUnits", "userSpaceOnUse")
         .attr("y1", this.margin.top)
         .attr("y2", this.height - this.margin.bottom)
@@ -267,29 +267,7 @@ export class EmbedPlot extends Plot {
         .attr("stroke-width", 2)
         .attr("stroke", "purple")
 
-    const nexts = []
-    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
-      for (const next of forecast.nexts) {
-        nexts.push({baseT: next.baseT, t: this.state.plotT + forecast.tp, tp: forecast.tp,
-          [this.vField]: next[this.vField], w: next.w}) 
-      }
-    }
-   
-
-    const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
-    for (let tpi = 1; tpi <= this.tp; tpi++) {
-      const tpNexts = nexts.filter(d => d.tp == tpi)
-      const VW = tpNexts.map(d => [d[this.vField], d.w])
-      const kdeRes = this.kde(VW, null, this.hp)
-
-      const gradient = this.nodes.gradients.select(`#embed-gradient-${tpi}`)
-      gradient.selectAll("stop")
-        .data(kdeRes.reverse())
-        .join("stop")
-          .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
-          .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
-
-    }
+    this.updateKernelWidth(this.forecasts)
 
     const rectWidth = this.scaleX(1) - this.scaleX(0) 
     this.nodes.confRects
@@ -300,7 +278,23 @@ export class EmbedPlot extends Plot {
         .attr("y", this.margin.top)
         .attr("width", rectWidth)
         .attr("height", this.height - this.margin.bottom - this.margin.top)
-        .attr("fill", d => `url(#embed-gradient-${d})`)
+        .attr("fill", d => `url(#${this.id}-gradient-${d})`)
+  }
+
+  updateKernelWidth(forecasts) {
+    this.forecasts = forecasts
+
+    const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
+    for (const forecast of nowForecasts) {
+      const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
+      const kdeRes = [...forecast.kdeRes.vs]
+      const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
+      gradient.selectAll("stop")
+        .data(kdeRes.reverse())
+        .join("stop")
+          .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
+          .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
+    }
   }
 
 

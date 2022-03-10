@@ -22,7 +22,6 @@ export class SimplexPlot extends Plot {
     })
 
     this.data = data
-    console.log(this.data)
     if (this.dateField) {
       this.data.forEach(d => d.___date = new Date(d[this.dateField]))
     }
@@ -111,8 +110,6 @@ export class SimplexPlot extends Plot {
         d => d.___date)
       dateRange[1] = new Date(dateRange[1].getTime()
         + dateInterval * this.tp)
-
-      console.log(dateRange)
 
 
       this.scaleXDate = d3.scaleUtc()
@@ -373,25 +370,27 @@ export class SimplexPlot extends Plot {
 
     
 
-    this.kdeResMap = new Map()
+    // this.kdeResMap = new Map()
 
-    const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
-    for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
-      //const VW = forecast.nexts.map(d => [d[this.vField], d.w])
-      //const kdeRes = this.kde(VW, null, this.hp)
-      const kdeRes = forecast.kdeRes
-      const kdeData = [...kdeRes.vs].reverse()
-      if (forecast.kdeRes) {
-        const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
-        gradient.selectAll("stop")
-          .data(kdeData)
-          .join("stop")
-            .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
-            .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
+    // const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
+    // for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
+    //   //const VW = forecast.nexts.map(d => [d[this.vField], d.w])
+    //   //const kdeRes = this.kde(VW, null, this.hp)
+    //   const kdeRes = forecast.kdeRes
+    //   const kdeData = [...kdeRes.vs].reverse()
+    //   if (forecast.kdeRes) {
+    //     const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
+    //     gradient.selectAll("stop")
+    //       .data(kdeData)
+    //       .join("stop")
+    //         .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
+    //         .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
 
-        this.kdeResMap.set(forecast.tp, kdeRes)
-      }
-    }
+    //     this.kdeResMap.set(forecast.tp, kdeRes)
+    //   }
+    // }
+
+    this.updateKernelWidth(this.forecasts)
 
     this.nodes.confRects
       .selectAll("rect")
@@ -402,6 +401,23 @@ export class SimplexPlot extends Plot {
       d3.Delaunay.from(this.points, d => this.scaleX(d.t), d => this.scaleY(d[this.vField]))
 
   }
+
+  updateKernelWidth(forecasts) {
+    this.forecasts = forecasts
+
+    const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
+    for (const forecast of nowForecasts) {
+      const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
+      const kdeRes = [...forecast.kdeRes.vs]
+      const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
+      gradient.selectAll("stop")
+        .data(kdeRes.reverse())
+        .join("stop")
+          .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
+          .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
+    }
+  }
+
 
   updateInteraction() {
     this.selects.neighborLine.attr("visibility", "hidden")
@@ -443,7 +459,6 @@ export class SimplexPlot extends Plot {
   setShowDates(showDates){
     this.showDates = showDates
     if (this.showDates && this.dateField) {
-      console.log("Showing Dates")
       this.createAxisBottom(this.nodes.axisX, this.scaleXDate, "date", {
         //tickFormat: tick => tick.toISOString().slice(0, 4),
         tickFilter: d => true
@@ -529,7 +544,9 @@ export class SimplexPlot extends Plot {
 
       let values = [["t", neighbor.t]]
       if (this.dateField) {
-        values.push(["date", neighbor[this.dateField]])
+        //values.push(["date", neighbor[this.dateField]])
+        // TODO: Smart date formatting
+        values.push(["date", neighbor.___date.toLocaleString()])
       }
       values = values.concat([
         ["distance", neighbor.distance.toPrecision(3)], // TODO: Automatic

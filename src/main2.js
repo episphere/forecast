@@ -4,13 +4,7 @@ import { PhasePlot } from "./PhasePlot.js"
 import { DistancePlot } from "./DistancePlot.js"
 import {simplex, delayEmbed, kde} from "./forecast.js"
 
-const vField = null
-
-let E = 6
-let tp = 16
-let nn = 8
-let tau = 1
-let theta = 1
+let vField = null
 
 let simplexPlot, embedPlot, phasePlot, distancePlot;
 
@@ -74,12 +68,16 @@ function updateData(newData) {
   sFields.forEach(d => addOption(sFieldSelect, d))
 }
 
+let forecasts = []
+
 function runData(data) {
   const E = parseInt(document.getElementById("param-input-E").value)
   const nn = parseInt(document.getElementById("param-input-nn").value)
   const theta = parseFloat(document.getElementById("param-input-theta").value)
+  const tp = parseInt(document.getElementById("param-input-tp").value)
+  const hp = parseFloat(document.getElementById("param-kernel-width").value)
 
-  const vField = vFieldSelect.value
+  vField = vFieldSelect.value
   const sField = sFieldSelect.value 
   const tField = tFieldSelect.value
 
@@ -90,9 +88,12 @@ function runData(data) {
 
   dateToggle.disabled = !tFieldToggle.checked
   if (tFieldToggle.checked) {
-    data.forEach(d => d[tField] = new Date(d[tField]))
+    data.forEach(d => d.___date = new Date(d[tField]))
+    data.sort((a, b) => a.___date - b.___date)
+  } else {
+    data.forEach(d => d.t = parseFloat(d[tField]))
+    data.sort((a, b) => a.t - b.t)
   }
-  data.sort((a, b) => a.t - b.t)
   data.map((d,i) => d.t = i) // TODO: Don't erase "t" field
 
   for (const row of data) {
@@ -100,10 +101,10 @@ function runData(data) {
     row.t = parseInt(row.t)
   }
 
-  const forecasts = simplex(data, vField, tp, E, nn, theta)
+  forecasts = simplex(data, vField, tp, E, nn, theta)
   for (const forecast of forecasts) {
     const VW = forecast.nexts.map(d => [d[vField], d.w])
-    forecast.kdeRes = kde(VW, null, 0.1)
+    forecast.kdeRes = kde(VW, null, hp)
   }
   
   simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), data, forecasts, vField, {
@@ -227,6 +228,17 @@ document.getElementById("param-input-E").addEventListener("input", () => runPara
 document.getElementById("param-input-nn").addEventListener("input", () => runParam.innerHTML = "Run*")
 document.getElementById("param-input-theta").addEventListener("input", () => runParam.innerHTML = "Run*")
 
+const kernelWidthInput = document.getElementById("param-kernel-width")
+kernelWidthInput.addEventListener("change", () => {
+  for (const forecast of forecasts) {
+    const VW = forecast.nexts.map(d => [d[vField], d.w])
+    forecast.kdeRes = kde(VW, null, parseFloat(kernelWidthInput.value))
+  }
+  
+  simplexPlot.updateKernelWidth(forecasts)
+  embedPlot.updateKernelWidth(forecasts)
+})
+
 const weightToggle = document.getElementById("weight-coloring-toggle")
 weightToggle.addEventListener("input", () => {
   simplexPlot.setWeightColoring(weightToggle.checked)
@@ -234,6 +246,8 @@ weightToggle.addEventListener("input", () => {
   phasePlot.setWeightColoring(weightToggle.checked)
   distancePlot.setWeightColoring(weightToggle.checked)
 })
+
+
 
 const dateToggle = document.getElementById("show-dates-toggle")
 dateToggle.addEventListener("input", () => {

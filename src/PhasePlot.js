@@ -63,6 +63,14 @@ export class PhasePlot extends Plot {
       .attr("width", this.width)
       .attr("height", this.height)
 
+    const clipPath = this.nodes.base.append("clipPath")
+      .attr("id", `${this.id}-clip`)
+    clipPath.append("rect")
+      .attr("x", this.margin.left)
+      .attr("y", this.margin.top)
+      .attr("width", this.width - this.margin.right - this.margin.left)
+      .attr("height", this.height - this.margin.bottom - this.margin.top)
+
     this.nodes.axisX = this.nodes.base.append("g")
     this.nodes.axisY = this.nodes.base.append("g")
 
@@ -72,6 +80,14 @@ export class PhasePlot extends Plot {
       .attr("fill", "none")
       .attr("stroke-linejoin", "round")
       .attr("stroke-linecap", "round") 
+      .attr("clip-path", `url(#${this.id}-clip)`)
+
+      // this.nodes.phaseLines.append("rect")
+      //   .attr("x", 0)
+      //   .attr("y", 0)
+      //   .attr("width", this.width)
+      //   .attr("height", this.height)
+      //   .attr("fill", "orange")
 
     this.nodes.dataPhase = this.nodes.phaseLines.append("g")
     this.nodes.nextsPhase = this.nodes.phaseLines.append("g")

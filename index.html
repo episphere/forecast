@@ -91,31 +91,31 @@
         <div class="plot"><div id="plot_phase"></div></div>
 
         <div class="params">
+          <div>
+            <label for="nn">Horizon:</label>
+            <input id="param-input-tp" type="number" id="nn" value=16> 
+          </div>
+
             <div>
               <label for="E">Embedding:</label>
               <input id="param-input-E" type="number" value=6>
             </div>
 
             <div>
-              <label for="nn">Neighbors:</label>
+              <label for="param-input-nn">Neighbors:</label>
               <input id="param-input-nn" type="number" value=8>
             </div>
 
             <div>
-              <label for="nn">Theta:</label>
+              <label for="param-input-theta">Theta:</label>
               <input id="param-input-theta" type="number" value=1.0>
             </div>
 
             <button id="param-run" type="button">Run</button>
 
             <div>
-              <label for="nn">Horizon:</label>
-              <input id="param-input-tp" type="number" id="nn" value=16 disabled> 
-            </div>
-
-            <div>
-              <label for="nn">Kernel Width:</label>
-              <input id="param-kernel-width" type="number" id="nn" value=1.0 disabled>
+              <label for="param-kernel-width">Kernel Width:</label>
+              <input id="param-kernel-width" type="number" value=0.1>
             </div>
 
             <div>
