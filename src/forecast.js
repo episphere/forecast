@@ -1,6 +1,7 @@
 import * as d3 from "https://cdn.skypack.dev/d3-array@3";
 import {default as gaussian}  from 'https://cdn.skypack.dev/gaussian@1.2.0?min'
 
+// TODO: Reduce memory footprint
 export function simplex(data, vField, tp, E, nn, theta, args = {}) {
 
   args = {
@@ -98,37 +99,83 @@ export function delayEmbed(data, fields, E, args = {}) {
   return embedData
 }
 
-export function kde(XW, h, hp = null, n = 40) {
+export function kde(XW, opts={}) {
+  opts = Object.assign({hp:1, hf: null, wf:8, n: 80, outputKernels: false}, opts)
+  let {hp, hf, wf, n, outputKernels} = opts
+  
   const norm = gaussian(0, 1)
     
-  const min = d3.min(XW, d => d[0])
-  const max = d3.max(XW, d => d[0])
-  if (h == null && hp != null) {
-    h = (max - min) * hp
+  const minV = d3.min(XW, d => d[0])
+  const maxV = d3.max(XW, d => d[0])
+
+  if (!hf) {
+    hf = Math.max(maxV - minV, 0.00001)
+  }
+  const h = hf*hp
+
+  const rangeValues = []
+  for (const [x, w] of XW) {
+    const value = h * norm.ppf(0.999) / (w * wf)
+    rangeValues.push(x + value)
+    rangeValues.push(x - value)
   }
 
-  const domain = [
-    min - norm.ppf(0.999)*h,
-    max + norm.ppf(0.999)*h
-  ]
+  const domain = d3.extent(rangeValues)
   const step = (domain[1] - domain[0]) / n
-
-  const wt = XW.reduce((t, x) => t + x[1], 0)
+  const sc = 1 / (norm.pdf((0) / h))
 
   const vs = []
   const kernelVs = []
-  for (let a = domain[0]; a <= domain[1]; a += step) {
-    let v = 0
+  for (let a = domain[0]; a < domain[1]; a += step) {
+    let totalV = 0
     for (const [i, [x, w]] of XW.entries()) {
-      const val = w * norm.pdf((a - x) / h)
-      v += val
-      kernelVs.push({y: a, v: val / wt, k: i})
+      const v = w * norm.pdf((a - x)*w*wf / h) / XW.length
+      totalV += v
+      if (outputKernels) {
+        kernelVs.push({v: a, p: v, k: i})
+      }
     }
-    vs.push({y: a, v: v / wt})
+    vs.push({v: a, p: totalV * sc})
   }
 
-  return {vs: vs, kernelVs: kernelVs}
+  const out = {ps: vs}
+  if (outputKernels) {
+    out.kernelPs = kernelVs
+  }
+  return out
 }
+
+// export function kde(XW, h, hp = null, n = 40) {
+//   const norm = gaussian(0, 1)
+    
+//   const min = d3.min(XW, d => d[0])
+//   const max = d3.max(XW, d => d[0])
+//   if (h == null && hp != null) {
+//     h = (max - min) * hp
+//   }
+
+//   const domain = [
+//     min - norm.ppf(0.999)*h,
+//     max + norm.ppf(0.999)*h
+//   ]
+//   const step = (domain[1] - domain[0]) / n
+
+//   const wt = XW.reduce((t, x) => t + x[1], 0)
+
+//   const vs = []
+//   const kernelVs = []
+//   for (let a = domain[0]; a <= domain[1]; a += step) {
+//     let v = 0
+//     for (const [i, [x, w]] of XW.entries()) {
+//       const val = w * norm.pdf((a - x) / h)
+//       v += val
+//       kernelVs.push({y: a, v: val / wt, k: i})
+//     }
+//     vs.push({y: a, v: v / wt})
+//   }
+
+//   return {vs: vs, kernelVs: kernelVs}
+// }
 
 function distance(a, b) {
   let tot = 0.0

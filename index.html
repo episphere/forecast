@@ -6,7 +6,7 @@
     <meta charset="utf-8">
 
     <script src="src/lib/d3/d3.min.js"></script>
-    <script src="src/lib/taffydb/taffy.js"></script>
+    <!-- <script src="src/lib/taffydb/taffy.js"></script> -->
     <script src="src/lib/gaussian.js"></script>
     <!-- <script src="src/forecast.js"></script> -->
 
@@ -108,14 +108,14 @@
 
             <div>
               <label for="param-input-theta">Theta:</label>
-              <input id="param-input-theta" type="number" value=1.0>
+              <input id="param-input-theta" type="number" value=1.0 step=0.1> 
             </div>
 
             <button id="param-run" type="button">Run</button>
 
             <div>
               <label for="param-kernel-width">Kernel Width:</label>
-              <input id="param-kernel-width" type="number" value=0.1>
+              <input id="param-kernel-width" type="number" value=0.1 step="0.1">
             </div>
 
             <div>
@@ -176,5 +176,6 @@
     crossorigin="anonymous"></script>
 </body>
 
+<!-- <script src="src/main_test.js" type="module"></script> -->
 <script src="src/main2.js" type="module"></script>
 </html>

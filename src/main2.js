@@ -4,16 +4,52 @@ import { PhasePlot } from "./PhasePlot.js"
 import { DistancePlot } from "./DistancePlot.js"
 import {simplex, delayEmbed, kde} from "./forecast.js"
 
+// TODO: Cache data
+
+
 let vField = null
+let hf = 1
 
 let simplexPlot, embedPlot, phasePlot, distancePlot;
 
-// --- Data loading ---
-
+// Inputs
 const tFieldSelect = document.getElementById("tfield-select")
 const vFieldSelect = document.getElementById("vfield-select")
 const sFieldSelect = document.getElementById("sfield-select")
 const tFieldToggle = document.getElementById("tfield-toggle")
+
+const paramInputE = document.getElementById("param-input-E")
+const paramInputNn = document.getElementById("param-input-nn")
+const paramInputTheta = document.getElementById("param-input-theta")
+const paramInputTp = document.getElementById("param-input-tp")
+const paramInputHp = document.getElementById("param-kernel-width")
+
+const kernelWidthInput = document.getElementById("param-kernel-width")
+const weightToggle = document.getElementById("weight-coloring-toggle")
+const dateToggle = document.getElementById("show-dates-toggle")
+
+let fieldValues = {
+  E: "6", nn: "8", theta: "1.0", tp: "16", hp: "0.1", weight: "true", date: "false"
+}
+
+const queryString = window.location.hash;
+let hashParams = new URLSearchParams(queryString.slice(1))
+fieldValues = {...fieldValues, ...Object.fromEntries(hashParams.entries())}
+
+paramInputE.value = fieldValues.E
+paramInputNn.value = fieldValues.nn
+paramInputTheta.value = fieldValues.theta
+paramInputTp.value = fieldValues.tp
+kernelWidthInput.value = fieldValues.hp
+weightToggle.checked = fieldValues.weight
+dateToggle.checked = fieldValues.date
+
+
+
+//const hashParams = {}
+
+// --- Data loading ---
+
 
 let data = null
 function updateData(newData) {
@@ -71,11 +107,11 @@ function updateData(newData) {
 let forecasts = []
 
 function runData(data) {
-  const E = parseInt(document.getElementById("param-input-E").value)
-  const nn = parseInt(document.getElementById("param-input-nn").value)
-  const theta = parseFloat(document.getElementById("param-input-theta").value)
-  const tp = parseInt(document.getElementById("param-input-tp").value)
-  const hp = parseFloat(document.getElementById("param-kernel-width").value)
+  const E = parseInt(paramInputE.value)
+  const nn = parseInt(paramInputNn.value)
+  const theta = parseFloat(paramInputTheta.value)
+  const tp = parseInt(paramInputTp.value)
+  const hp = parseFloat(paramInputHp.value)
 
   vField = vFieldSelect.value
   const sField = sFieldSelect.value 
@@ -101,13 +137,16 @@ function runData(data) {
     row.t = parseInt(row.t)
   }
 
+  const vRange = d3.extent(data, d => d[vField])
+  hf = vRange[1] - vRange[0]
   forecasts = simplex(data, vField, tp, E, nn, theta)
   for (const forecast of forecasts) {
     const VW = forecast.nexts.map(d => [d[vField], d.w])
-    forecast.kdeRes = kde(VW, null, hp)
+    forecast.kdeRes = kde(VW, {hp: hp, hf: hf})
   }
   
   simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), data, forecasts, vField, {
+    plotT:  fieldValues.t,
     dateField: tFieldToggle.checked ? tField : null,
     width: 520, height: 340,
     margin: {left: 60, right: 30, top: 35, bottom: 30},
@@ -130,7 +169,7 @@ function runData(data) {
     state: simplexPlot.state,
     weightColorFunction: embedPlot.weightColorScale,
     width: 340, height: 340, 
-    margin: {left: 60, right: 30, top: 20, bottom: 30}
+    margin: {left: 60, right: 30, top: 20, bottom: 35}
   })
 
   createTimeSlider(document.getElementById("time-slider-container"), 
@@ -153,7 +192,7 @@ function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
   `)
   timeSlider.setAttribute("min", tRange[0])
   timeSlider.setAttribute("max", tRange[1])
-  timeSlider.setAttribute("value", state.plotT)
+  timeSlider.setAttribute("value", !isNaN(fieldValues.t) ? parseInt(fieldValues.t) : state.plotT)
 
   const label = document.createElement("label")
   const labelText = state.plotT + ""
@@ -169,9 +208,10 @@ function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
   timeSlider.addEventListener("input", () => {
     state.plotT = parseInt(timeSlider.value)
     label.innerHTML = state.plotT + ""
+    //hashParams.t = state.plotT
+    hashParams.set("t", state.plotT)
+    updateHashParams()
   })
-
-
   
   timeContainer.appendChild(label)
   timeContainer.appendChild(timeSlider)
@@ -210,6 +250,9 @@ document.getElementById("data-select").addEventListener("change", e => {
 })
 
 document.getElementById("run-button").addEventListener("click", () => {
+  hashParams.delete("t")
+  delete fieldValues.t
+  updateHashParams()
   runData(data)
 })
 
@@ -217,42 +260,62 @@ function updateForecasts() {
   runData(data)
 }
 
+function updateHashParams() {
+  //window.location.hash = [...Object.entries(hashParams)].map(d => d.join("=")).join("&")
+  window.location.hash = hashParams.toString()
+
+  //const hashString = window.location.hash;
+
+}
+
 const runParam = document.getElementById("param-run")
 runParam.addEventListener("click", () => {
   updateForecasts()
+  hashParams.set("tp", paramInputTp.value)
+  hashParams.set("E", paramInputE.value)
+  hashParams.set("nn",  paramInputNn.value)
+  hashParams.set("theta", paramInputTheta.value)
+  updateHashParams()
   runParam.innerHTML = "Run"
 })
 
 //document.getElementById("param-input-E").addEventListener("input", updateForecasts)
-document.getElementById("param-input-E").addEventListener("input", () => runParam.innerHTML = "Run*")
-document.getElementById("param-input-nn").addEventListener("input", () => runParam.innerHTML = "Run*")
-document.getElementById("param-input-theta").addEventListener("input", () => runParam.innerHTML = "Run*")
+paramInputTp.addEventListener("input", () => runParam.innerHTML = "Run*")
+paramInputE.addEventListener("input", () => runParam.innerHTML = "Run*")
+paramInputNn.addEventListener("input", () => runParam.innerHTML = "Run*")
+paramInputTheta.addEventListener("input", () => runParam.innerHTML = "Run*")
 
-const kernelWidthInput = document.getElementById("param-kernel-width")
 kernelWidthInput.addEventListener("change", () => {
+  const hp = parseFloat(kernelWidthInput.value)
   for (const forecast of forecasts) {
     const VW = forecast.nexts.map(d => [d[vField], d.w])
-    forecast.kdeRes = kde(VW, null, parseFloat(kernelWidthInput.value))
+    forecast.kdeRes = kde(VW, {hp: hp, hf: hf})
   }
   
   simplexPlot.updateKernelWidth(forecasts)
   embedPlot.updateKernelWidth(forecasts)
+  hashParams.set("hp", hp)
+  updateHashParams()
 })
 
-const weightToggle = document.getElementById("weight-coloring-toggle")
 weightToggle.addEventListener("input", () => {
   simplexPlot.setWeightColoring(weightToggle.checked)
   embedPlot.setWeightColoring(weightToggle.checked)
   phasePlot.setWeightColoring(weightToggle.checked)
   distancePlot.setWeightColoring(weightToggle.checked)
+
+  hashParams.set("weight", weightToggle.checked)
+  updateHashParams()
 })
 
 
 
-const dateToggle = document.getElementById("show-dates-toggle")
 dateToggle.addEventListener("input", () => {
   simplexPlot.setShowDates(dateToggle.checked)
   //embedPlot.setShowDates(dateToggle.checked)
+
+  hashParams.set("date", dateToggle.checked)
+  updateHashParams()
 })
 
 // ---------

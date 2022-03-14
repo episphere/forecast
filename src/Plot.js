@@ -108,7 +108,8 @@ export class Plot {
       ...opts
     }
 
-    const axis = node.attr("transform",  `translate(0, ${this.height - this.margin.bottom-3})`)
+    // TODO: Make dependent on font size.
+    const axis = node.attr("transform",  `translate(0, ${this.height - this.margin.bottom-5})`)
 
     if (label == null) {
       label = ""

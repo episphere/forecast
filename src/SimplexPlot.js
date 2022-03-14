@@ -8,6 +8,7 @@ export class SimplexPlot extends Plot {
   
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
+      plotT: null,
       weightColoring: true,
       showDates: false,
       dateField: null,
@@ -65,9 +66,12 @@ export class SimplexPlot extends Plot {
     this.setDefaults()
 
     // Dynamic state
+    const plotT = this.plotT != null ? 
+      Math.min(Math.max(this.tForecastRange[0], this.plotT), this.tForecastRange[1])
+      : this.tForecastRange[1]
     this.state.defineProperty("selected", new Set())
     this.state.defineProperty("focused", null)
-    this.state.defineProperty("plotT", this.tRange[1])
+    this.state.defineProperty("plotT", plotT)
     this.state.defineProperty("plotTp", this.tp)
     this.state.addListener((p, v) => this.stateChanged(p, v))
 
@@ -408,13 +412,13 @@ export class SimplexPlot extends Plot {
     const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
     for (const forecast of nowForecasts) {
       const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
-      const kdeRes = [...forecast.kdeRes.vs]
+      const kdeRes = [...forecast.kdeRes.ps]
       const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
       gradient.selectAll("stop")
         .data(kdeRes.reverse())
         .join("stop")
-          .attr("offset", d => 1 -  (d.y - this.scaleY.domain()[0]) / domainSize)
-          .attr("stop-color", d => `rgb(169, 76, 212, ${d.v})`)
+          .attr("offset", d => 1 -  (d.v - this.scaleY.domain()[0]) / domainSize)
+          .attr("stop-color", d => `rgb(169, 76, 212, ${d.p})`)
     }
   }
 

@@ -1,4 +1,6 @@
 import { Plot } from "./Plot.js"
+import * as d3 from "https://cdn.skypack.dev/d3@7"
+
 
 export class DistancePlot extends Plot {
   
@@ -25,13 +27,38 @@ export class DistancePlot extends Plot {
       this.plotFail()
     }
 
-
     this.element.append(this.nodes.base.node())
+    this.postRender()
+  }
+
+  postRender() {
+    //const width = this.nodes.axisX.select(".tick text").node().getBBox().width
+    const widths = []
+    for (const tick of this.nodes.axisX.selectAll(".tick text")) {
+      widths.push(tick.getBBox().width)
+    }
+    const maxWidth = d3.max(widths)
+    console.log(maxWidth, this.scaleX.step())
+    if (maxWidth > this.scaleX.step()) {
+      console.log( this.nodes.axisX.selectAll(".tick text"))
+      this.nodes.axisX.selectAll(".tick text").attr("visibility", "hidden")
+      this.nodes.axisX.select(`#${this.id}-x-label`).text("neighbor")
+    }
   }
 
   setDefaults() {
+
     this.tp = d3.extent(this.forecasts, d => d.tp)[1]
     this.tRange = d3.extent(this.forecasts, d => d.baseT)
+
+    // Dynamic state
+    this.state.defineProperty("selected", new Set())
+    this.state.defineProperty("focused", null)
+    this.state.defineProperty("plotT", this.tRange[1])    
+    this.state.defineProperty("plotTp", this.tp)
+    this.state.addListener((p, v) => this.stateChanged(p, v))
+    
+
     this.neighbors = [...this.forecasts.find(d => d.baseT == this.state.plotT 
       && d.tp == this.state.plotTp).neighbors]
   }
@@ -64,12 +91,6 @@ export class DistancePlot extends Plot {
     this.nodes.meanLine = this.nodes.base.append("g")
       .attr("id", "meanLine")
 
-    // Dynamic state
-    this.state.defineProperty("selected", new Set())
-    this.state.defineProperty("focused", null)
-    this.state.defineProperty("plotT", this.tRange[1])    
-    this.state.defineProperty("plotTp", this.tp)
-    this.state.addListener((p, v) => this.stateChanged(p, v))
   }
 
   updatePlotT() {
@@ -94,9 +115,7 @@ export class DistancePlot extends Plot {
       .range([this.margin.left, this.width - this.margin.right])
       .paddingInner(0.2)
       .paddingOuter(0.2)
-    // console.log(this.neighbors.map(d => this.scaleX(d.t)))
-    // console.log(this.scaleX.range()[0] + this.scaleX.step()*this.scaleX.paddingOuter())
-    // console.log()
+
 
     const hoverStart = this.scaleX.range()[0] + this.scaleX.step()*this.scaleX.paddingOuter()
     this.nodes.base.on("mousemove", (e) => {
@@ -117,7 +136,7 @@ export class DistancePlot extends Plot {
       .domain(yExtent)
       .range([this.height - this.margin.bottom, this.margin.top])
 
-    this.nodes.axisX.attr("transform",  `translate(0, ${this.height - this.margin.bottom})`)
+    this.nodes.axisX.attr("transform",  `translate(0, ${this.height - this.margin.bottom -3})`)
     this.nodes.axisX.call(d3.axisBottom(this.scaleX))
 
     this.nodes.axisX.selectAll("path")
@@ -125,9 +144,9 @@ export class DistancePlot extends Plot {
 
     this.nodes.axisX.select("#label").remove()
     this.nodes.axisX.append("text")
-      .attr("id", "label")
+      .attr("id", `${this.id}-x-label`)
       .attr("class", "plot-label")
-      .text("t")
+      .text("neighbor (t)")
       .attr("text-anchor", "middle")
       .attr("fill", "currentColor")
       .attr("transform", `translate(${this.width / 2}, ${this.margin.bottom})`)
