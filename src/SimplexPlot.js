@@ -451,9 +451,6 @@ export class SimplexPlot extends Plot {
       }
 
     }
-
-    
-   
   }
 
   updatePlotTp(plotT) {
@@ -478,6 +475,9 @@ export class SimplexPlot extends Plot {
 
   setWeightColoring(weightColoring) {
     this.weightColoring = weightColoring
+    this.nodes.neighbors.selectAll("circle")
+      .attr("fill", d => this.weightColoring ? 
+        this.weightColorScale(d.w) : "red")
     this.updateInteraction()
   }
 

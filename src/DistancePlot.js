@@ -1,7 +1,7 @@
 import { Plot } from "./Plot.js"
 import * as d3 from "https://cdn.skypack.dev/d3@7"
 
-
+// TODO: Responde to "show dates"
 export class DistancePlot extends Plot {
   
   constructor(element, forecasts, vField, opts = {}) {
@@ -40,7 +40,6 @@ export class DistancePlot extends Plot {
     const maxWidth = d3.max(widths)
     console.log(maxWidth, this.scaleX.step())
     if (maxWidth > this.scaleX.step()) {
-      console.log( this.nodes.axisX.selectAll(".tick text"))
       this.nodes.axisX.selectAll(".tick text").attr("visibility", "hidden")
       this.nodes.axisX.select(`#${this.id}-x-label`).text("neighbor")
     }
@@ -142,7 +141,7 @@ export class DistancePlot extends Plot {
     this.nodes.axisX.selectAll("path")
       .style("visibility", "hidden")
 
-    this.nodes.axisX.select("#label").remove()
+    this.nodes.axisX.select(`#${this.id}-x-label`).remove()
     this.nodes.axisX.append("text")
       .attr("id", `${this.id}-x-label`)
       .attr("class", "plot-label")

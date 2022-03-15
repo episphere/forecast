@@ -21,18 +21,22 @@
 </head>
 
 
-<body>
+<body id="body">
+  <div id="file-upload-overlay" class="overlay" style="display:none"></div>
+
   <div class="top">
     <div class="top-element"><h1>epiForecast<sup style="font-size: .5em; color: red;">WIP</sup></h1></div>
     <span class="top-element"> [<a href="https://github.com/episphere/forecast">code</a>] </span>
   </div>
+
+  <div id="file-warning" class="file-request"></div>
 
   <div class="file-select-block">
     <div class="collapsible">
       Data Configuration
       <span class="collapsible-arrow material-icons">arrow_drop_down</span>
     </div>
-    <div class="content">
+    <div id="file-select-content" class="content">
       Upload your data file here. The file must be in CSV or JSON format. The data should consist of a series of rows with at least one time field (with values which are either valid dates or integers) and at least one value field (with values which are numbers). The data can also have a group field. Within each group, the time values should be evenly spaced. 
       <div class="file-select" >
         <label for="data-select">Choose a data file:</label>
@@ -90,7 +94,7 @@
     <div class="plot-row">
         <div class="plot"><div id="plot_phase"></div></div>
 
-        <div class="params">
+        <div id="plot-params" class="params">
           <div>
             <label for="nn">Horizon:</label>
             <input id="param-input-tp" type="number" id="nn" value=16> 

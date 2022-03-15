@@ -29,7 +29,8 @@ const weightToggle = document.getElementById("weight-coloring-toggle")
 const dateToggle = document.getElementById("show-dates-toggle")
 
 let fieldValues = {
-  E: "6", nn: "8", theta: "1.0", tp: "16", hp: "0.1", weight: "true", date: "false"
+  E: "6", nn: "8", theta: "1.0", tp: "16", hp: "0.1", weight: "true", date: "false",
+  tField: "date", vField: "deaths", sField: "___s", timeIsDate: "true"
 }
 
 const queryString = window.location.hash;
@@ -41,8 +42,25 @@ paramInputNn.value = fieldValues.nn
 paramInputTheta.value = fieldValues.theta
 paramInputTp.value = fieldValues.tp
 kernelWidthInput.value = fieldValues.hp
-weightToggle.checked = fieldValues.weight
-dateToggle.checked = fieldValues.date
+weightToggle.checked = fieldValues.weight == "true" ? true : false
+dateToggle.checked = fieldValues.date  == "true" ? true : false
+
+function addOption(select, field) {
+  const option = document.createElement("option")
+  option.setAttribute("value", field)
+  option.innerHTML = field
+  select.appendChild(option)
+}
+
+addOption(tFieldSelect, fieldValues.tField)
+addOption(vFieldSelect, fieldValues.vField)
+addOption(sFieldSelect, fieldValues.sField)
+
+tFieldSelect.disabled = true
+vFieldSelect.disabled = true
+sFieldSelect.disabled = true
+tFieldToggle.disabled = true
+tFieldToggle.checked = fieldValues.timeIsDate  == "true" ? true : false
 
 
 
@@ -52,6 +70,7 @@ dateToggle.checked = fieldValues.date
 
 
 let data = null
+let filename = null
 function updateData(newData) {
   data = newData
   const fields = Object.keys(data[0])
@@ -59,14 +78,6 @@ function updateData(newData) {
   tFieldSelect.innerHTML = ""
   vFieldSelect.innerHTML = ""
   sFieldSelect.innerHTML = ""
-
-
-  function addOption(select, field) {
-    const option = document.createElement("option")
-    option.setAttribute("value", field)
-    option.innerHTML = field
-    select.appendChild(option)
-  }
 
   let tFields = new Set()
   let vFields = new Set()
@@ -102,6 +113,13 @@ function updateData(newData) {
   vFields.forEach(d => addOption(vFieldSelect, d))
   addOption(sFieldSelect, "NONE")
   sFields.forEach(d => addOption(sFieldSelect, d))
+
+  tFieldSelect.disabled = false
+  vFieldSelect.disabled = false
+  sFieldSelect.disabled = false
+  tFieldToggle.disabled = false
+  runButton.disabled = false
+  document.getElementById("file-warning").style.display = "none"
 }
 
 let forecasts = []
@@ -148,6 +166,7 @@ function runData(data) {
   simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), data, forecasts, vField, {
     plotT:  fieldValues.t,
     dateField: tFieldToggle.checked ? tField : null,
+    showDates: dateToggle.checked,
     width: 520, height: 340,
     margin: {left: 60, right: 30, top: 35, bottom: 30},
   })
@@ -174,6 +193,8 @@ function runData(data) {
 
   createTimeSlider(document.getElementById("time-slider-container"), 
     simplexPlot.element, simplexPlot.scaleX, simplexPlot.tForecastRange, simplexPlot.state)
+
+  document.getElementById("plot-params").style.display = "flex"
 }
 
 function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
@@ -221,16 +242,14 @@ const collapsibles = document.getElementsByClassName("collapsible")
 for (const collapsible of collapsibles) {
   collapsible.addEventListener("click", () => {
     const content = collapsible.nextElementSibling // TODO: I don't like this.
-    content.style.display = content.style.display == "block" ? "none" : "block"   
+    content.style.display = content.style.display == "block" ? "none" : "block" 
   })
 }
 
 const dataSelectLabel = document.getElementById("data-select-label")
-dataSelectLabel.innerHTML = "mortality.csv"
+dataSelectLabel.innerHTML = "NO FILE"
 
-document.getElementById("data-select").addEventListener("change", e => {
-  const file = e.target.files[0]
-
+function uploadFile(file) {
   const reader = new FileReader()
   function parseFile() {
     let data = null
@@ -241,20 +260,33 @@ document.getElementById("data-select").addEventListener("change", e => {
     }
     updateData(data)
     dataSelectLabel.innerHTML = file.name
+    filename = file.name
   }
 
   reader.addEventListener("load", parseFile, false);
   if (file) {
     reader.readAsText(file)
   }
+}
+
+document.getElementById("data-select").addEventListener("change", e => {
+  const file = e.target.files[0]
+  uploadFile(file)
 })
 
-document.getElementById("run-button").addEventListener("click", () => {
+const runButton = document.getElementById("run-button")
+runButton.addEventListener("click", () => {
   hashParams.delete("t")
   delete fieldValues.t
+  hashParams.set("file", filename)
+  hashParams.set("tField", tFieldSelect.value)
+  hashParams.set("vField", vFieldSelect.value)
+  hashParams.set("sField", sFieldSelect.value)
+  hashParams.set("timeIsDate", tFieldToggle.checked)
   updateHashParams()
   runData(data)
 })
+runButton.disabled = true
 
 function updateForecasts() {
   runData(data)
@@ -318,34 +350,64 @@ dateToggle.addEventListener("input", () => {
   updateHashParams()
 })
 
-// ---------
-
-
-d3.json("data/data.json").then(data => {
-  updateData(data)
-  tFieldSelect.value = "date"
-  vFieldSelect.value = "deaths"
-  sFieldSelect.value = "___s"
-  runData(data)
+const overlay = document.getElementById("file-upload-overlay")
+document.addEventListener("dragover", (e) => {
+  e.preventDefault();
 })
 
 
-// new SimplexPlot(document.getElementById("plot_ts"), [], [], vField, {
-//   width: 520, height: 340,
-//   margin: {left: 60, right: 30, top: 35, bottom: 30},}
-// )
+document.addEventListener("dragenter", (e) => {
+  overlay.style.display = "block"
+})
 
-// new EmbedPlot(document.getElementById("plot_alt"), [], [], vField, {
-//   width: 340, height: 340, 
-//   margin: {left: 60, right: 30, top: 35, bottom: 30}
-// })
+overlay.addEventListener("dragleave", (e) => {
+  overlay.style.display = "none"
+})
 
-// new PhasePlot(document.getElementById("plot_phase"), [], [], vField, {
-//   width: 340, height: 340, 
-//   margin: {left: 60, right: 30, top: 20, bottom: 30}
-// })
+document.addEventListener("drop", (e) => {
+  e.preventDefault()
 
-// new DistancePlot(document.getElementById("plot_weight"), [], vField, {
-//   width: 340, height: 340, 
-//   margin: {left: 60, right: 30, top: 20, bottom: 30}
-// })
+  overlay.style.display = "none"
+  document.getElementById("file-select-content").style.display = "block"
+  if (e.dataTransfer.items.length > 0) {
+    if (e.dataTransfer.items[0].kind === 'file') {
+      var file = e.dataTransfer.items[0].getAsFile()
+      uploadFile(file)
+    }
+  }
+
+})
+
+
+// ---------
+
+if (fieldValues.file) {
+  const div = document.getElementById("file-warning")//document.createElement("div") 
+  div.classList.add("file-request")
+  const text = document.createElement("div")
+  text.innerHTML = `The URL contains the name of a file: <i>${fieldValues.file}</i>. </br>
+  Either upload this file, or click "ignore" to view the default data.`
+  div.appendChild(text)
+
+  const button = document.createElement("button")
+  button.innerHTML = "Ignore"
+  button.style.marginTop = "10px"
+  button.addEventListener("click", () => {
+    window.location.hash = ""
+    window.location.reload()
+  })
+  div.appendChild(button)
+
+  document.getElementById("file-select-content").style.display = "block"
+  document.getElementById("file-warning").style.display = "block"
+
+} else {
+  d3.json("data/data.json").then(data => {
+    dataSelectLabel.innerHTML = "mortality.csv"
+    updateData(data)
+    tFieldSelect.value = fieldValues.tField
+    vFieldSelect.value = fieldValues.vField
+    sFieldSelect.value = fieldValues.sField
+    runData(data)
+  })
+}
