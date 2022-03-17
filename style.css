@@ -221,11 +221,17 @@ g {
   width: 830px;
 }
 .file-select {
-  margin-top: 12px
+  margin-top: 12px;
+  display: inline-block;
+  margin-right: 15px;
 }
 .file-select-label {
   font-size: .8em;
   font-style: italic;
+}
+
+.url-select {
+  margin-left: 15px;
 }
 
 .file-request {
@@ -249,14 +255,45 @@ g {
   position:   fixed; 
 }
 
+.field-stack {
+  display: inline-flex;
+  flex-direction: column;
+  row-gap: 3px;
+  align-items: flex-end;
+}
+#upload-error {
+  display: none;
+  color: red;
+  font-size: .8em;
+}
 #field-selects {
-  margin-top: 12px
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  column-gap: 15px;
+  /* align-items: flex-end; */
 }
 #field-selects select {
-  margin-right:22px
+  /* margin-right:22px; */
+  width: 100px;
 }
 #run-button {
-  margin-top: 12px
+  margin-top: 12px;
+  background: brown;
+  border: none;
+  padding-inline: 15px;
+  padding-block: 5px;
+  color: white;
+  box-sizing: border-box;
+  border-width: 4px;
+  height: 30px;
+  width: 60px;
+}
+#run-button:hover {
+    background: rgb(179, 79, 79);
+} 
+#run-button:active {
+  transform: scale(0.97);
 }
 #param-run {
   margin-bottom: 10px

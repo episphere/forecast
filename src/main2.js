@@ -5,6 +5,7 @@ import { DistancePlot } from "./DistancePlot.js"
 import {simplex, delayEmbed, kde} from "./forecast.js"
 
 // TODO: Cache data
+// TODO: Progress bar
 
 
 let vField = null
@@ -15,8 +16,11 @@ let simplexPlot, embedPlot, phasePlot, distancePlot;
 // Inputs
 const tFieldSelect = document.getElementById("tfield-select")
 const vFieldSelect = document.getElementById("vfield-select")
-const sFieldSelect = document.getElementById("sfield-select")
+const gFieldSelect = document.getElementById("gfield-select")
 const tFieldToggle = document.getElementById("tfield-toggle")
+const gSelect = document.getElementById("g-select")
+
+const urlField = document.getElementById("url-input")
 
 const paramInputE = document.getElementById("param-input-E")
 const paramInputNn = document.getElementById("param-input-nn")
@@ -27,6 +31,9 @@ const paramInputHp = document.getElementById("param-kernel-width")
 const kernelWidthInput = document.getElementById("param-kernel-width")
 const weightToggle = document.getElementById("weight-coloring-toggle")
 const dateToggle = document.getElementById("show-dates-toggle")
+
+const runButton = document.getElementById("run-button")
+
 
 let fieldValues = {
   E: "6", nn: "8", theta: "1.0", tp: "16", hp: "0.1", weight: "true", date: "false",
@@ -45,6 +52,12 @@ kernelWidthInput.value = fieldValues.hp
 weightToggle.checked = fieldValues.weight == "true" ? true : false
 dateToggle.checked = fieldValues.date  == "true" ? true : false
 
+function clearOptions(select) {
+  for (let i = select.length; i >= 0; i--) {
+    select.remove(i)
+  }
+}
+
 function addOption(select, field) {
   const option = document.createElement("option")
   option.setAttribute("value", field)
@@ -54,11 +67,11 @@ function addOption(select, field) {
 
 addOption(tFieldSelect, fieldValues.tField)
 addOption(vFieldSelect, fieldValues.vField)
-addOption(sFieldSelect, fieldValues.sField)
+addOption(gFieldSelect, fieldValues.sField)
 
 tFieldSelect.disabled = true
 vFieldSelect.disabled = true
-sFieldSelect.disabled = true
+gFieldSelect.disabled = true
 tFieldToggle.disabled = true
 tFieldToggle.checked = fieldValues.timeIsDate  == "true" ? true : false
 
@@ -77,11 +90,12 @@ function updateData(newData) {
 
   tFieldSelect.innerHTML = ""
   vFieldSelect.innerHTML = ""
-  sFieldSelect.innerHTML = ""
+  gFieldSelect.innerHTML = ""
 
   let tFields = new Set()
   let vFields = new Set()
   let sFields = new Set()
+  let gValues = new Set()
 
   const taken = (sets, field) => sets.some(d => d.has(field)) ? 1 : 0
 
@@ -109,17 +123,28 @@ function updateData(newData) {
     sFields.add(field)
   }
 
+  clearOptions(tFieldSelect)
+  clearOptions(vFieldSelect)
+  clearOptions(gFieldSelect)
+
+
   tFields.forEach(d => addOption(tFieldSelect, d))
   vFields.forEach(d => addOption(vFieldSelect, d))
-  addOption(sFieldSelect, "NONE")
-  sFields.forEach(d => addOption(sFieldSelect, d))
+  addOption(gFieldSelect, "NONE")
+  sFields.forEach(d => addOption(gFieldSelect, d))
+
+  if (tFields.has(fieldValues.tField)) {tFieldSelect.value = fieldValues.tField}
+  if (vFields.has(fieldValues.vField)) {vFieldSelect.value = fieldValues.vField}
+  if (sFields.has(fieldValues.sField)) {gFieldSelect.value = fieldValues.sField}
+
 
   tFieldSelect.disabled = false
   vFieldSelect.disabled = false
-  sFieldSelect.disabled = false
+  gFieldSelect.disabled = false
   tFieldToggle.disabled = false
   runButton.disabled = false
   document.getElementById("file-warning").style.display = "none"
+  updateGroupSelect()
 }
 
 let forecasts = []
@@ -132,7 +157,7 @@ function runData(data) {
   const hp = parseFloat(paramInputHp.value)
 
   vField = vFieldSelect.value
-  const sField = sFieldSelect.value 
+  const sField = gFieldSelect.value 
   const tField = tFieldSelect.value
 
   if (sField != "NONE") {
@@ -155,15 +180,26 @@ function runData(data) {
     row.t = parseInt(row.t)
   }
 
-  const vRange = d3.extent(data, d => d[vField])
+  const fData = []
+  data.forEach(d => {
+    if (d[vField] != null && !isNaN(d[vField])) {
+      fData.push(d)
+    }
+  })
+
+  if (fData.length < data.length) {
+    console.warn(`Missing values, so only using first ${fData.length} of ${data.length} rows.`)
+  }
+
+  const vRange = d3.extent(fData, d => d[vField])
   hf = vRange[1] - vRange[0]
-  forecasts = simplex(data, vField, tp, E, nn, theta)
+  forecasts = simplex(fData, vField, tp, E, nn, theta)
   for (const forecast of forecasts) {
     const VW = forecast.nexts.map(d => [d[vField], d.w])
     forecast.kdeRes = kde(VW, {hp: hp, hf: hf})
   }
   
-  simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), data, forecasts, vField, {
+  simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), fData, forecasts, vField, {
     plotT:  fieldValues.t,
     dateField: tFieldToggle.checked ? tField : null,
     showDates: dateToggle.checked,
@@ -171,13 +207,13 @@ function runData(data) {
     margin: {left: 60, right: 30, top: 35, bottom: 30},
   })
 
-  embedPlot = new EmbedPlot(document.getElementById("plot_alt"), data, forecasts, vField, {
+  embedPlot = new EmbedPlot(document.getElementById("plot_alt"), fData, forecasts, vField, {
     state: simplexPlot.state,
     width: 340, height: 340, 
     margin: {left: 60, right: 30, top: 35, bottom: 30}
   })
   
-  const dataEmbed = delayEmbed(data, [vField], E)
+  const dataEmbed = delayEmbed(fData, [vField], E)
   phasePlot = new PhasePlot(document.getElementById("plot_phase"), dataEmbed, forecasts, vField, {
     state: simplexPlot.state,
     width: 340, height: 340, 
@@ -249,6 +285,8 @@ for (const collapsible of collapsibles) {
 const dataSelectLabel = document.getElementById("data-select-label")
 dataSelectLabel.innerHTML = "NO FILE"
 
+let urlAddress = null
+
 function uploadFile(file) {
   const reader = new FileReader()
   function parseFile() {
@@ -261,30 +299,92 @@ function uploadFile(file) {
     updateData(data)
     dataSelectLabel.innerHTML = file.name
     filename = file.name
+    urlAddress = null
   }
 
   reader.addEventListener("load", parseFile, false);
   if (file) {
     reader.readAsText(file)
   }
+
+  //document.getElementById("plots").style.filter = "blur(5px)"
 }
+
+function updateGroupSelect() {
+  const gValues = new Set()
+
+  if (gFieldSelect.value != "NONE") {
+    gSelect.disabled = false
+    data.forEach(d => gValues.add(d[gFieldSelect.value]))
+  } else {
+    gSelect.disabled = true
+  }
+
+  clearOptions(gSelect)
+  gValues.forEach(d => addOption(gSelect, d))
+  console.log(gValues)
+}
+
+gFieldSelect.addEventListener("change", e => {
+  updateGroupSelect()
+  runButton.style.border = "solid yellow"
+})
 
 document.getElementById("data-select").addEventListener("change", e => {
   const file = e.target.files[0]
   uploadFile(file)
 })
 
-const runButton = document.getElementById("run-button")
+const uploadError = document.getElementById("upload-error")
+async function getData(url) {
+  try {
+    console.log("Getting:", url)
+    let data = null
+    if (url.includes(".json")) { // TODO: Better
+      data = await d3.json(url)
+    } else if (url.includes(".csv")) {
+      data = await d3.csv(url)
+    }
+
+    if (data) {
+      console.log("Found data, rows: ", data.length)
+      updateData(data)
+      urlAddress = url
+      filename = null
+    }
+   
+
+    uploadError.style.display = "none"
+  } catch(err) {
+    uploadError.style.display = "inline-block"
+    uploadError.innerHTML = err.message
+    console.error(err)
+  }
+  
+}
+
+document.getElementById("get-button").addEventListener("click", () => {
+  const url = urlField.value
+  getData(url)
+})
+
 runButton.addEventListener("click", () => {
   hashParams.delete("t")
   delete fieldValues.t
-  hashParams.set("file", filename)
+  if (filename != null) {
+    hashParams.set("file", filename)
+  } else if (urlAddress != null) {
+    hashParams.set("url", urlAddress)
+  }
+  
   hashParams.set("tField", tFieldSelect.value)
   hashParams.set("vField", vFieldSelect.value)
-  hashParams.set("sField", sFieldSelect.value)
+  hashParams.set("sField", gFieldSelect.value)
   hashParams.set("timeIsDate", tFieldToggle.checked)
   updateHashParams()
+  document.getElementById("plots").style.filter = ""
   runData(data)
+  runButton.style.border = ""
 })
 runButton.disabled = true
 
@@ -376,6 +476,8 @@ document.addEventListener("drop", (e) => {
     }
   }
 
+  document.getElementById("")
+
 })
 
 
@@ -401,13 +503,15 @@ if (fieldValues.file) {
   document.getElementById("file-select-content").style.display = "block"
   document.getElementById("file-warning").style.display = "block"
 
+} else if (fieldValues.url) {
+  urlField.value = fieldValues.url
+  getData(fieldValues.url).then(() => {
+    runData(data)
+  })
 } else {
   d3.json("data/data.json").then(data => {
     dataSelectLabel.innerHTML = "mortality.csv"
     updateData(data)
-    tFieldSelect.value = fieldValues.tField
-    vFieldSelect.value = fieldValues.vField
-    sFieldSelect.value = fieldValues.sField
     runData(data)
   })
 }

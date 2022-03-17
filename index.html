@@ -38,28 +38,62 @@
     </div>
     <div id="file-select-content" class="content">
       Upload your data file here. The file must be in CSV or JSON format. The data should consist of a series of rows with at least one time field (with values which are either valid dates or integers) and at least one value field (with values which are numbers). The data can also have a group field. Within each group, the time values should be evenly spaced. 
-      <div class="file-select" >
-        <label for="data-select">Choose a data file:</label>
-        <input type="file" id="data-select" style="display: none;" />
-        <input type="button" value="Browse..." onclick="document.getElementById('data-select').click();" />
-        <label id="data-select-label" class="file-select-label" for="data-select">No file selected</label>
+      <div>
+        <div class="file-select" >
+          <label for="data-select">File:</label>
+          <input type="file" id="data-select"  accept=".json,.csv" style="display: none;" />
+          <input type="button" value="Browse..." onclick="document.getElementById('data-select').click();" />
+          <label id="data-select-label" class="file-select-label" for="data-select">No file selected</label>
+        </div>
+
+        <span><b>OR</b></span>
+
+        <span class="url-select">
+          <label for="url-input">URL:</label>
+          <input id="url-input" type="url">
+          <button  id="get-button" type="button">Get</button>
+        </span>
+
+        <span id="upload-error"></span>
       </div>
       <div id="field-selects">
-        <label for="tfield-select">Time Field:</label>
-        <select class="field-select" id="tfield-select" /></select>
-        <label for="vfield-select">Value Field:</label>
-        <select class="field-select" id="vfield-select"></select>
-        <label for="gfield-select">Group Field:</label>
-        <select class="field-select" id="sfield-select"></select>
+        <div class="field-stack">
+          <div>
+            <label for="tfield-select">Time Field:</label>
+            <select class="field-select" id="tfield-select" /></select>
+          </div>
+          
+          <div>
+            <input type="checkbox" id="tfield-toggle" checked>
+            <label>Field Is Date</label><br>
+          </div>
+        </div> 
+        
+        <div>
+          <label for="vfield-select">Value Field:</label>
+          <select class="field-select" id="vfield-select"></select>
+       </div>
+
+        <div class="field-stack" style="align-items: flex-end">
+          <div>
+            <label for="gfield-select">Group Field:</label>
+            <select class="field-select" id="gfield-select"></select>
+          </div>
+          <div>
+            <label for="g-select">Group:</label>
+            <select class="field-select" id="g-select"></select>
+          </div>
+        </div>
+
+        <div style="margin-left: auto;">
+          <button  id="run-button" type="button">Run</button>
+        </div>
+       
       </div>
 
-      <div style="margin-top: 5px">
-        <input type="checkbox" id="tfield-toggle" checked>
-        <label> Time Field is Date</label><br>
-      </div>
-     
       
-      <button  id="run-button" type="button">Run</button>
+     
+
     </div>
   </div>
 
@@ -80,7 +114,7 @@
 
 
 
-  <div class="plots">
+  <div id="plots" class="plots">
 
     <div class="plot-row">
       <div class="plot">
