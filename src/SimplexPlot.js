@@ -18,6 +18,8 @@ export class SimplexPlot extends Plot {
       hp: 0.1,
       hoverRadius: 10, 
       tRangePlot: null,
+      showShading: true,
+      showTooltip: true,
       width: 640, 
       height: 480
     })
@@ -65,10 +67,21 @@ export class SimplexPlot extends Plot {
 
     this.setDefaults()
 
+    function bound(v, range) {
+      return Math.min(Math.max(range[0], v), range[1])
+    }
+
+    let plotT = null 
+    if (this.plotT < 0) {
+      plotT = this.tForecastRange[1] + this.plotT
+    } else if (this.plotT == null) {      
+      plotT = this.tForecastRange[1]
+    } else {
+      plotT = this.plotT
+    }
+    plotT = bound(plotT, this.tForecastRange)
+
     // Dynamic state
-    const plotT = this.plotT != null ? 
-      Math.min(Math.max(this.tForecastRange[0], this.plotT), this.tForecastRange[1])
-      : this.tForecastRange[1]
     this.state.defineProperty("selected", new Set())
     this.state.defineProperty("focused", null)
     this.state.defineProperty("plotT", plotT)
@@ -314,7 +327,6 @@ export class SimplexPlot extends Plot {
         //   break
         // }
 
-        //console.log(neighbor.t, tpi,  this.neighborsFrom.get(neighbor.t), this.neighborsFrom.get(neighbor.t).includes(tpi))
         if (!this.neighborsFrom.get(neighbor.t).includes(tpi)) {
           continue
         }
@@ -408,6 +420,10 @@ export class SimplexPlot extends Plot {
 
   updateKernelWidth(forecasts) {
     this.forecasts = forecasts
+
+    if (!this.showShading) {
+      return
+    }
 
     const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
     for (const forecast of nowForecasts) {
@@ -559,7 +575,7 @@ export class SimplexPlot extends Plot {
       ])
 
       // TODO: FIX: Cursor briefly flashes when changing style.
-      this.nodes.tooltip.style("opacity", 1)
+      this.nodes.tooltip.style("opacity", this.showTooltip ? 1 : 0)
       this.nodes.tooltip.html(this.valueTable(values))
       this.nodes.tooltip.style("left", `70px`)
       this.nodes.tooltip.style("top", `50px`)

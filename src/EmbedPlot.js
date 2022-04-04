@@ -1,4 +1,5 @@
 import { Plot } from "./Plot.js"
+import * as d3 from "https://cdn.skypack.dev/d3@7"
 
 // TODO: FIX REDRAWING BUG (also on other plots except TS)
 export class EmbedPlot extends Plot {
@@ -7,6 +8,7 @@ export class EmbedPlot extends Plot {
     super(element, opts, {
       weightColoring: true,
       hoverRadius: 10, 
+      showShading: true,
       hp: 0.1,
       width: 640, 
       height: 480,
@@ -99,7 +101,7 @@ export class EmbedPlot extends Plot {
     
     this.nodes.nextLines = this.nodes.base.append("g")
       .attr("fill", "none")
-      .style("stroke-dasharray", "3 1")
+      .style("stroke-dasharray", "3 2")
 
     this.nodes.nowLine = this.nodes.base.append("g")
       .attr("fill", "none")
@@ -111,7 +113,8 @@ export class EmbedPlot extends Plot {
   }
 
   updatePlotT() {
-    this.now = this.forecasts.find(d => d.baseT == this.state.plotT && d.tp == this.state.plotTp)
+    this.nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
+    this.now = this.nowForecasts.find(d => d.baseT == this.state.plotT && d.tp == this.state.plotTp)
 
     const neighbors = new Map()
     for (const forecast of this.forecasts.filter(d => d.baseT == this.state.plotT)) {
@@ -181,8 +184,20 @@ export class EmbedPlot extends Plot {
       .domain([-this.now.E+1, this.state.plotTp]) // TODO: Fix
       .range([this.margin.left, this.width - this.margin.right])
 
+    const vs = []
+    for (const forecast of this.nowForecasts) {
+      if (forecast.kdeRes) {
+        //forecast.kdeRes.ps.map(d => vs.push(d.v))
+        forecast.kdeRes.ps.forEach(d => vs.push(d.v))
+      }
+    }
+
+    let yExtent =  d3.extent([
+      ...d3.extent(this.allValues, d => d[this.vField]),
+      ...d3.extent(vs)
+    ])
     this.scaleY = d3.scaleLinear()
-      .domain(d3.extent(this.allValues, d => d[this.vField]))
+      .domain(yExtent)
       .range([this.height - this.margin.bottom, this.margin.top])
       .nice()
 
@@ -283,6 +298,10 @@ export class EmbedPlot extends Plot {
 
   updateKernelWidth(forecasts) {
     this.forecasts = forecasts
+
+    if (!this.showShading) {
+      return
+    }
 
     const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
     for (const forecast of nowForecasts) {

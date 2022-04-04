@@ -27,13 +27,13 @@ export function simplex(data, vField, tp, E, nn, theta, args = {}) {
     
     const embedRow = get(dataEmbed, ti) 
     const baseTrainData = dataEmbed.filter(d => d.t <= ti - tp)
-    let neighbors = getNeighbors(baseTrainData, embedRow, nn)
+    let neighbors = findNeighbors(baseTrainData, embedRow, nn)
 
-    const meanDistance = d3.mean(neighbors, d => d.distance)
-    neighbors.forEach(d => {
-      d.w = Math.exp(-theta * d.distance / meanDistance)
-    })
-
+    // const meanDistance = d3.mean(neighbors, d => d.distance)
+    // neighbors.forEach(d => {
+    //   d.w = Math.exp(-theta * d.distance / meanDistance)
+    // })
+    weightNeighbors(neighbors, theta)
 
     for (let tpi = 1; tpi <= tp; tpi++) {
       const nexts = [] 
@@ -77,6 +77,10 @@ export function delayEmbed(data, fields, E, args = {}) {
 
   const {tau, tRange, outField, outTimeField} = args
 
+  if (!Array.isArray(fields)) {
+    fields = [fields]
+  }
+
   const embedData = []
   for (let i = (E-1)*tau; i < data.length; i++) {
     const row = {...data[i]}
@@ -90,8 +94,8 @@ export function delayEmbed(data, fields, E, args = {}) {
         ts.push(p.t)
       }
 
-      row[outField] = point
-      row[outTimeField] = ts
+      row[fields.length > 1 ? `${outField}_${field}` : outField] = point
+      row[fields.length > 1 ? `${outTimeField}_${field}` : outTimeField] = ts
     }
     embedData.push(row)
   }
@@ -99,7 +103,10 @@ export function delayEmbed(data, fields, E, args = {}) {
   return embedData
 }
 
-export function kde(XW, opts={}) {
+// Experimented with kernels which get wider when w is lower, but this lead to very wide kernels 
+// at low values of w. Wasn't a very intuitive way to look at it, as the size of the kernels could
+// then exceed the range of the data, so we went with the simpler, better behaved kernels in kde().
+export function kdeWiden(XW, opts={}) {
   opts = Object.assign({hp:1, hf: null, wf:8, n: 80, outputKernels: false}, opts)
   let {hp, hf, wf, n, outputKernels} = opts
   
@@ -129,13 +136,13 @@ export function kde(XW, opts={}) {
   for (let a = domain[0]; a < domain[1]; a += step) {
     let totalV = 0
     for (const [i, [x, w]] of XW.entries()) {
-      const v = w * norm.pdf((a - x)*w*wf / h) / XW.length
-      totalV += v
+      const v = sc * w * norm.pdf((a - x)*w*wf / h) / XW.length
+      totalV += v 
       if (outputKernels) {
-        kernelVs.push({v: a, p: v, k: i})
+        kernelVs.push({v: a, p: v , k: i})
       }
     }
-    vs.push({v: a, p: totalV * sc})
+    vs.push({v: a, p: totalV })
   }
 
   const out = {ps: vs}
@@ -143,6 +150,50 @@ export function kde(XW, opts={}) {
     out.kernelPs = kernelVs
   }
   return out
+}
+
+// KDE which doesn't get wider, just taller
+export function kde(XW, opts={}) {
+  opts = Object.assign({hp:.1, hf: null, n: 80}, opts)
+  let {hp, hf, n} = opts
+
+  const norm = gaussian(0, 1)
+    
+  const minV = d3.min(XW, d => d[0])
+  const maxV = d3.max(XW, d => d[0])
+
+  if (!hf) {
+    hf = Math.max(maxV - minV, 0.00001)
+  }
+
+  const ppf = .999
+  const widthSc = norm.ppf(ppf)*2
+  const h = widthSc/(hp*hf)
+  
+  const rangeValues = []
+  for (const [x, w] of XW) {
+    const value = norm.ppf(ppf)/h
+    rangeValues.push(x + value)
+    rangeValues.push(x - value)
+  }
+
+  const domain = d3.extent(rangeValues)
+  const step = (domain[1] - domain[0]) / n
+  const sc = 1 / (norm.pdf(0)*XW.length)
+
+  const vs = []
+  const kernelVs = []
+  for (let a = domain[0]; a < domain[1]; a += step) {
+    let totalV = 0
+    for (const [i, [x, w]] of XW.entries()) {
+      const v = sc * w * norm.pdf(h*(a - x))
+      totalV += v
+      kernelVs.push({v: a, p: v, k: i})
+    }
+    vs.push({v: a, p: totalV})
+  }
+
+  return {ps: vs, kernelPs: kernelVs}
 }
 
 // export function kde(XW, h, hp = null, n = 40) {
@@ -201,7 +252,15 @@ function divide(v, s) {
   return v.map(d => d / s)
 }
 
-function getNeighbors(trainData, embedRow, nn, neighbors=null, newData=null) {
+export function weightNeighbors(neighbors, theta) {
+  const meanDistance = d3.mean(neighbors, d => d.distance)
+  neighbors.forEach(d => {
+    d.w = Math.exp(-theta * d.distance / meanDistance)
+  })
+  return neighbors
+}
+
+export function findNeighbors(trainData, embedRow, nn, neighbors=null, newData=null) {
   if (neighbors == null) {
     neighbors = trainData.map(d => ({...d, distance: distance(d.embed, embedRow.embed)}))
     neighbors = neighbors.sort((a, b) => a.distance - b.distance).slice(0, nn)
