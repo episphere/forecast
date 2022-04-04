@@ -72,21 +72,14 @@ export class SimplexPlot extends Plot {
     }
 
     let plotT = null 
-    console.log(this.plotT, this.tForecastRange)
-    console
     if (this.plotT < 0) {
-      console.log("if")
       plotT = this.tForecastRange[1] + this.plotT
     } else if (typeof this.plotT != "number" || isNaN(this.plotT)) {      
       plotT = this.tForecastRange[1]
-      console.log("else if", plotT)
     } else {
-      console.log("else")
       plotT = this.plotT
     }
-    console.log(plotT)
     plotT = bound(plotT, this.tForecastRange)
-    console.log(plotT)
 
     // Dynamic state
     this.state.defineProperty("selected", new Set())
