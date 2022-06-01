@@ -60,6 +60,32 @@ export function simplex(data, vField, tp, E, nn, theta, args = {}) {
   return forecasts
 }
 
+export function fcDisable(forecasts, vField, disabled) {
+  // const neighbors = forecasts[0].neighbors
+
+  // const totalW = d3.sum(neighbors, d => d.w)
+  // neighbors.forEach(d => d.w = d.w/totalW)
+
+
+  for (const forecast of forecasts) {
+
+    let vh = 0
+    let totalW = 0
+    let yhVector = Array.from({length: forecast.yhVector.length}, () => 0)
+    for (const next of forecast.nexts.filter(d => !disabled.has(`${forecasts[0].baseT}-${d.baseT}`))) {
+      totalW += next.w
+      vh += next.w * next[vField] 
+      yhVector = add(yhVector, multiply(next.embed, next.w))
+    }
+    vh = vh / totalW 
+    
+    forecast.yhVector = divide(yhVector, totalW)
+    forecast[vField] = vh 
+  }
+  
+
+}
+
 function get(series, val, field="t") {
   return series.find(d => d[field] == val)
   // const start = series[0][field]

@@ -2,7 +2,7 @@ import { SimplexPlot } from "./SimplexPlot.js"
 import { EmbedPlot } from "./EmbedPlot.js"
 import { PhasePlot } from "./PhasePlot.js"
 import { DistancePlot } from "./DistancePlot.js"
-import {simplex, delayEmbed, kde} from "./forecast.js"
+import {simplex, fcDisable, delayEmbed, kde} from "./forecast.js"
 
 // TODO: Cache data
 // TODO: Progress bar
@@ -36,9 +36,12 @@ const dateToggle = document.getElementById("show-dates-toggle")
 
 const runButton = document.getElementById("run-button")
 
+const exportAllToggle = document.getElementById("export-all-toggle")
+const exportButton =  document.getElementById("export-button")
+
 
 let fieldValues = {
-  E: "6", nn: "8", theta: "1.0", tp: "16", hp: "0.1", weight: "true", date: "false",
+  E: "6", nn: "8", theta: "1.0", tp: "16", hp: "0.2", weight: "true", date: "false",
   tField: "date", vField: "deaths", sField: "___s", timeIsDate: "true"
 }
 
@@ -85,6 +88,7 @@ tFieldToggle.checked = fieldValues.timeIsDate  == "true" ? true : false
 
 
 let data = null
+let fData = null
 let filename = null
 function updateData(newData) {
   data = newData
@@ -182,7 +186,7 @@ function runData(data) {
     row.t = parseInt(row.t)
   }
 
-  const fData = []
+  fData = []
   data.forEach(d => {
     if (d[vField] != null && !isNaN(d[vField])) {
       fData.push(d)
@@ -198,7 +202,9 @@ function runData(data) {
   forecasts = simplex(fData, vField, tp, E, nn, theta)
   for (const forecast of forecasts) {
     const VW = forecast.nexts.map(d => [d[vField], d.w])
-    forecast.kdeRes = kde(VW, {hp: hp, hf: hf})
+
+    // This takes up a lot of memory. TODO: Change!
+    forecast.kdeRes = kde(VW, {hp: hp, hf: hf, n: 40})
   }
 
   
@@ -228,6 +234,25 @@ function runData(data) {
     weightColorFunction: embedPlot.weightColorScale,
     width: 340, height: 340, 
     margin: {left: 60, right: 30, top: 20, bottom: 35}
+  })
+
+  simplexPlot.state.addListener((p, v) => {
+    if (p == "disabled") {
+
+      const fcIndices = []
+      for (const [i, fc] of forecasts.entries()) {
+        if (fc.baseT == simplexPlot.state.plotT) {
+          fcIndices.push(i)
+        }
+      }
+      const fcs = forecasts.slice(fcIndices[0], fcIndices[fcIndices.length-1]+1)
+      fcDisable(fcs, vField, simplexPlot.state.disabled)
+    
+      // Unnnecessary calculation; TODO: just update relevant forecasts
+      updateKernels()
+      simplexPlot.updateInteraction()
+      embedPlot.updatePlotT()
+    }
   })
 
   createTimeSlider(document.getElementById("time-slider-container"), 
@@ -348,7 +373,6 @@ async function getData(url) {
     }
 
     if (data) {
-      console.log("Found data, rows: ", data.length)
       updateData(data)
       urlAddress = url
       filename = null
@@ -389,6 +413,45 @@ runButton.addEventListener("click", () => {
 })
 runButton.disabled = true
 
+exportButton.addEventListener("click", () => {
+  let groups = d3.group(forecasts, d => d.baseT)
+  groups = groups.values()
+
+  let content = []
+  if (exportAllToggle.checked) {
+    content = [["neighbor_t", "neighbor_w", "from_t", "t", "forecast"]]
+
+    for (const fcs of groups) {
+      let enabledNextIndices = [] 
+      fcs[0].nexts.forEach((d,i) => {
+        if (!simplexPlot.state.disabled.has(`${fcs[0].baseT}-${d.baseT}`)) {
+          enabledNextIndices.push(i)
+        }
+      })
+      
+      for (const fc of fcs) {
+        for (const enabledNextIndex of enabledNextIndices) {
+          const d = fc.nexts[enabledNextIndex]
+          content.push([d.baseT, d.w, fc.baseT, fc.t, d[vField]])
+        }
+      }
+    }
+  } else {
+    content = [["from_t", "t", "forecast"]]
+
+    for (const fcs of groups) {
+      for (const fc of fcs) {
+        content.push([fc.baseT, fc.t, fc[vField]])
+      }
+    }
+  }
+  let csvContent = "data:text/csv;charset=utf-8," 
+      + content.map(d => d.join(",")).join("\n")
+
+  var encodedUri = encodeURI(csvContent)
+  window.open(encodedUri)
+})
+
 function updateForecasts() {
   runData(data)
 }
@@ -418,15 +481,20 @@ paramInputE.addEventListener("input", () => runParam.innerHTML = "Run*")
 paramInputNn.addEventListener("input", () => runParam.innerHTML = "Run*")
 paramInputTheta.addEventListener("input", () => runParam.innerHTML = "Run*")
 
-kernelWidthInput.addEventListener("change", () => {
+function updateKernels() {
   const hp = parseFloat(kernelWidthInput.value)
+  
   for (const forecast of forecasts) {
-    const VW = forecast.nexts.map(d => [d[vField], d.w])
-    forecast.kdeRes = kde(VW, {hp: hp, hf: hf})
+    const VW = forecast.nexts.filter(d => !simplexPlot.state.disabled.has(`${simplexPlot.state.plotT}-${d.baseT}`)).map(d => [d[vField], d.w])
+    forecast.kdeRes = kde(VW, {hp: hp, hf: hf, n: 40})
   }
   
   simplexPlot.updateKernelWidth(forecasts)
   embedPlot.updateKernelWidth(forecasts)
+}
+
+kernelWidthInput.addEventListener("change", () => {
+  updateKernels()
   hashParams.set("hp", hp)
   updateHashParams()
 })

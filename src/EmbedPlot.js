@@ -234,7 +234,10 @@ export class EmbedPlot extends Plot {
         .attr("id", d => `${this.id}-neighborLine-${d[d.length-1].t}`)
         .attr("d", this.line)
         .attr("stroke-width", 1.5)
-        .attr("stroke", this.coloringFunction)
+        .attr("stroke", d => {
+          const color = this.coloringFunction(d)
+          return color
+        })
 
     // this.nodes.neighborLines
     //   .selectAll("circle")
@@ -318,8 +321,10 @@ export class EmbedPlot extends Plot {
 
 
   updateInteraction() {
-    this.selects.neighborLine.attr("stroke", "grey")
-    this.selects.nextLine.attr("stroke", "grey")
+    this.selects.neighborLine.attr("stroke",
+      d => !this.state.disabled.has(`${this.state.plotT}-${d[0].t}`) ? "grey" : "lightgrey")
+    this.selects.nextLine.attr("stroke", 
+      d => !this.state.disabled.has(`${this.state.plotT}-${d[0].t}`) ? "grey" : "lightgrey")
 
     if (this.state.focused) {
       this.selects.neighborLine = 
@@ -333,7 +338,10 @@ export class EmbedPlot extends Plot {
       this.selects.neighborLine = this.nodes.neighborLines.selectAll("path")
       this.selects.nextLine = this.nodes.nextLines.selectAll("path")
 
-      this.selects.neighborLine.attr("stroke", this.coloringFunction)
+      this.selects.neighborLine.attr("stroke", d => {
+        const color = this.coloringFunction(d)
+        return color
+      })
       this.selects.nextLine.attr("stroke", this.coloringFunction)
     }
 
@@ -353,8 +361,13 @@ export class EmbedPlot extends Plot {
   setWeightColoring(weightColoring) {
     this.weightColoring = weightColoring
 
-    this.coloringFunction = this.weightColoring ? 
-      d => this.weightColorScale(d[0].w) : "red"
+    this.coloringFunction = d => { 
+      if (!this.state.disabled.has(`${this.state.plotT}-${d[0].baseT}`)) {
+        return this.weightColoring ? this.weightColorScale(d[0].w) : "red"
+      } else {
+        return "lightgrey"
+      }
+    }
 
     this.colorFunctionPast = d => !this.state.focused || this.state.focused == d[d.length-1].t 
       || this.state.selected.has(d[d.length-1].t) ?
@@ -401,7 +414,6 @@ export class EmbedPlot extends Plot {
     //const neighbor = this.allValues[delaunayPoint.i]
     //const p = [this.scaleX(neighbor.to), this.scaleY(neighbor[this.vField])]
     const dist = Math.hypot(delaunayPoint.x - e.offsetX, delaunayPoint.y - e.offsetY)
-    //console.log({...delaunayPoint, dist:dist})
     
     if (dist < this.hoverRadius) {
       this.state.focused = delaunayPoint.baseT

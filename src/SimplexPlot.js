@@ -41,6 +41,7 @@ export class SimplexPlot extends Plot {
     }
     
     this.element.append(this.nodes.base.node())
+    this.element.addEventListener("contextmenu", e => e.preventDefault())
   }
 
   setDefaults() {
@@ -83,6 +84,7 @@ export class SimplexPlot extends Plot {
 
     // Dynamic state
     this.state.defineProperty("selected", new Set())
+    this.state.defineProperty("disabled", new Set())
     this.state.defineProperty("focused", null)
     this.state.defineProperty("plotT", plotT)
     this.state.defineProperty("plotTp", this.tp)
@@ -101,7 +103,8 @@ export class SimplexPlot extends Plot {
       .attr("height", this.height)
       .on("mousemove", e => this.mouseMoved(e))
       .on("mouseleave",  e => this.mouseLeft(e))
-      .on("click",  e => this.mouseClicked(e))
+      .on("mousedown",  e => this.mouseClicked(e))
+      .on("contextmenu", e => false)
 
     this.line = d3.line() 
       .x(d => this.scaleX(d.t))
@@ -212,6 +215,14 @@ export class SimplexPlot extends Plot {
     //this.element.append(this.nodes.base.node())
   }
 
+  fillNeighbor(d) {
+    if (this.state.disabled.has(`${this.state.plotT}-${d.t}`)) {
+      return "none"
+    } else {
+      return this.weightColoring ? this.weightColorScale(d.w) : "red"
+    }
+  }
+
   updatePlotT() {
 
     this.now = this.forecasts.find(d => d.baseT == this.state.plotT && d.tp == this.state.plotTp)
@@ -263,8 +274,7 @@ export class SimplexPlot extends Plot {
         .attr("stroke", "brown")
         .attr("stroke-width", 1)
         .attr("r", 3)
-        .attr("fill", (d) => this.weightColoring ? 
-          this.weightColorScale(d.w) : "red")
+        .attr("fill", d => this.fillNeighbor(d))
 
     const neighborLines = []
     for (const [i, neighbor] of this.neighbors.entries()) {
@@ -458,6 +468,7 @@ export class SimplexPlot extends Plot {
       
       
       this.selects.neighbor.attr("r", 4)
+      this.selects.neighbor.attr("fill", d => this.fillNeighbor(d))
       this.selects.neighborLine.attr("visibility", "visible")
       this.selects.projLine.attr("visibility",  "visible" )
 
@@ -492,8 +503,7 @@ export class SimplexPlot extends Plot {
   setWeightColoring(weightColoring) {
     this.weightColoring = weightColoring
     this.nodes.neighbors.selectAll("circle")
-      .attr("fill", d => this.weightColoring ? 
-        this.weightColorScale(d.w) : "red")
+      .attr("fill", d => this.fillNeighbor(d))
     this.updateInteraction()
   }
 
@@ -558,21 +568,25 @@ export class SimplexPlot extends Plot {
     if (dist < this.hoverRadius) {
       this.state.focused = neighbor.t 
 
-      if (this.state.focused == this.state.plotT) {
-        return 
-      }
-
       let values = [["t", neighbor.t]]
       if (this.dateField) {
         //values.push(["date", neighbor[this.dateField]])
         // TODO: Smart date formatting
         values.push(["date", neighbor.___date.toLocaleString()])
       }
-      values = values.concat([
-        ["distance", neighbor.distance.toPrecision(3)], // TODO: Automatic
-        ["weight", neighbor.w.toFixed(2)],
-        ["tp", this.intListStr(this.neighborsFrom.get(neighbor.t))]
-      ])
+
+      if (this.state.focused == this.state.plotT) {
+        
+      } else {
+        values = values.concat([
+          ["distance", +parseFloat(neighbor.distance).toFixed(2)], // TODO: Automatic
+          ["weight", neighbor.w.toFixed(2)],
+          ["tp", this.intListStr(this.neighborsFrom.get(neighbor.t))]
+        ])
+      }
+
+     
+     
 
       // TODO: FIX: Cursor briefly flashes when changing style.
       this.nodes.tooltip.style("opacity", this.showTooltip ? 1 : 0)
@@ -590,10 +604,27 @@ export class SimplexPlot extends Plot {
   } 
 
   mouseClicked(e) {
+    e.preventDefault()
+
     if (this.state.focused != null) {
-      this.state.selected = this.state.selected.add(this.state.focused)
+      
+      if (e.button == 2) {
+        const key = `${this.state.plotT}-${this.state.focused}`
+        if (this.state.disabled.has(key)) {
+          this.state.disabled.delete(key)
+          this.state.disabled = this.state.disabled
+        } else {
+          this.state.disabled = this.state.disabled.add(key)
+        }
+      } else if (e.button == 0) {
+        this.state.selected = this.state.selected.add(this.state.focused)
+      }
     } else {
-      this.state.selected = new Set()
+      if (e.button == 2) {
+        this.state.disabled = new Set()
+      } else if (e.button == 0) {
+        this.state.selected = new Set()
+      }
     }
   }
 
