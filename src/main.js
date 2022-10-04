@@ -11,7 +11,7 @@ import {simplex, fcDisable, delayEmbed, kde} from "./forecast.js"
 
 
 let vField = null
-let hf = 1
+let kw = 1
 
 let simplexPlot, embedPlot, phasePlot, distancePlot;
 
@@ -28,7 +28,7 @@ const paramInputE = document.getElementById("param-input-E")
 const paramInputNn = document.getElementById("param-input-nn")
 const paramInputTheta = document.getElementById("param-input-theta")
 const paramInputTp = document.getElementById("param-input-tp")
-const paramInputHp = document.getElementById("param-kernel-width")
+const paramInputKw = document.getElementById("param-kernel-width")
 
 const kernelWidthInput = document.getElementById("param-kernel-width")
 const weightToggle = document.getElementById("weight-coloring-toggle")
@@ -41,7 +41,7 @@ const exportButton =  document.getElementById("export-button")
 
 
 let fieldValues = {
-  E: "6", nn: "8", theta: "1.0", tp: "16", hp: "0.2", weight: "true", date: "false",
+  E: "6", nn: "8", theta: "1.0", tp: "16", kw: "1.0", weight: "true", date: "false",
   tField: "date", vField: "deaths", sField: "___s", timeIsDate: "true"
 }
 
@@ -53,7 +53,7 @@ paramInputE.value = fieldValues.E
 paramInputNn.value = fieldValues.nn
 paramInputTheta.value = fieldValues.theta
 paramInputTp.value = fieldValues.tp
-kernelWidthInput.value = fieldValues.hp
+kernelWidthInput.value = fieldValues.kw
 weightToggle.checked = fieldValues.weight == "true" ? true : false
 dateToggle.checked = fieldValues.date  == "true" ? true : false
 
@@ -160,7 +160,7 @@ function runData(data) {
   const nn = parseInt(paramInputNn.value)
   const theta = parseFloat(paramInputTheta.value)
   const tp = parseInt(paramInputTp.value)
-  const hp = parseFloat(paramInputHp.value)
+  const kw = parseFloat(paramInputKw.value)
 
   vField = vFieldSelect.value
   const sField = gFieldSelect.value 
@@ -197,14 +197,18 @@ function runData(data) {
     console.warn(`Missing values, so only using first ${fData.length} of ${data.length} rows.`)
   }
 
-  const vRange = d3.extent(fData, d => d[vField])
-  hf = vRange[1] - vRange[0]
+  // const vRange = d3.extent(fData, d => d[vField])
+  // hf = vRange[1] - vRange[0]
+
+  const std = d3.deviation(fData, d => d[vField])
+  const kernelWidth = std * kw
+
   forecasts = simplex(fData, vField, tp, E, nn, theta)
   for (const forecast of forecasts) {
     const VW = forecast.nexts.map(d => [d[vField], d.w])
 
     // This takes up a lot of memory. TODO: Change!
-    forecast.kdeRes = kde(VW, {hp: hp, hf: hf, n: 40})
+    forecast.kdeRes = kde(VW, {kernelWidth, n: 40})
   }
 
   
@@ -495,11 +499,14 @@ paramInputNn.addEventListener("input", () => runParam.innerHTML = "Run*")
 paramInputTheta.addEventListener("input", () => runParam.innerHTML = "Run*")
 
 function updateKernels() {
-  const hp = parseFloat(kernelWidthInput.value)
+  const kw = parseFloat(kernelWidthInput.value)
+  const std = d3.deviation(data, d => d[vField])
+  const kernelWidth = kw * std 
+
   
   for (const forecast of forecasts) {
     const VW = forecast.nexts.filter(d => !simplexPlot.state.disabled.has(`${simplexPlot.state.plotT}-${d.baseT}`)).map(d => [d[vField], d.w])
-    forecast.kdeRes = kde(VW, {hp: hp, hf: hf, n: 40})
+    forecast.kdeRes = kde(VW, {kernelWidth: kernelWidth, n: 40})
   }
   
   simplexPlot.updateKernelWidth(forecasts)
@@ -508,7 +515,7 @@ function updateKernels() {
 
 kernelWidthInput.addEventListener("change", () => {
   updateKernels()
-  hashParams.set("hp", hp)
+  hashParams.set("kw", kw)
   updateHashParams()
 })
 

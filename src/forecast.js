@@ -178,8 +178,8 @@ export function kdeWiden(XW, opts={}) {
   return out
 }
 
-// KDE which doesn't get wider, just taller
-export function kde(XW, opts={}) {
+// KDE which doesn't get wider, just taller. Replaced in favor of a more interpretable width paramater. 
+export function kdeOld(XW, opts={}) {
   opts = Object.assign({hp:.1, hf: null, n: 80}, opts)
   let {hp, hf, n} = opts
 
@@ -222,37 +222,38 @@ export function kde(XW, opts={}) {
   return {ps: vs, kernelPs: kernelVs}
 }
 
-// export function kde(XW, h, hp = null, n = 40) {
-//   const norm = gaussian(0, 1)
-    
-//   const min = d3.min(XW, d => d[0])
-//   const max = d3.max(XW, d => d[0])
-//   if (h == null && hp != null) {
-//     h = (max - min) * hp
-//   }
+const c = 0.001
+export function kde(XW, opts={}) {
+  opts = Object.assign({kernelWidth: null, n: 80}, opts)
+  let {kernelWidth, n} = opts
 
-//   const domain = [
-//     min - norm.ppf(0.999)*h,
-//     max + norm.ppf(0.999)*h
-//   ]
-//   const step = (domain[1] - domain[0]) / n
+  if (kernelWidth == null) {
+    kernelWidth = Math.max(d3.deviation(XW, d => d[0]), 0.000001)*2
+  }
 
-//   const wt = XW.reduce((t, x) => t + x[1], 0)
+  const norm = gaussian(0, 1)
 
-//   const vs = []
-//   const kernelVs = []
-//   for (let a = domain[0]; a <= domain[1]; a += step) {
-//     let v = 0
-//     for (const [i, [x, w]] of XW.entries()) {
-//       const val = w * norm.pdf((a - x) / h)
-//       v += val
-//       kernelVs.push({y: a, v: val / wt, k: i})
-//     }
-//     vs.push({y: a, v: v / wt})
-//   }
+  const vRange = d3.extent(XW, d => d[0])
+  const domain = [vRange[0]-kernelWidth, vRange[1]+kernelWidth]
+  const step = (domain[1] - domain[0])/n
+  const s = 1 / (norm.pdf(0)*XW.length)
+  const h = Math.sqrt((-2/kernelWidth**2)*Math.log(c*Math.sqrt(2*Math.PI)))
 
-//   return {vs: vs, kernelVs: kernelVs}
-// }
+  const points = []
+  const kernelPoints = []
+  
+  for (let a = domain[0]; a <= domain[1]; a += step) {
+    let totalP = 0
+    for (const [i, [x,w]] of XW.entries()) {
+      const p = s * w * norm.pdf(h*(a-x))
+      totalP += p 
+      kernelPoints.push({v: a, p, k:i})
+    }
+    points.push({v: a, p: totalP})
+  }
+
+  return {ps: points, kernelPs: kernelPoints}
+}
 
 function distance(a, b) {
   let tot = 0.0
