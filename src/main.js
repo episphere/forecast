@@ -316,6 +316,7 @@ dataSelectLabel.innerHTML = "NO FILE"
 let urlAddress = null
 
 function uploadFile(file) {
+  
   const reader = new FileReader()
   function parseFile() {
     let data = null
@@ -327,7 +328,7 @@ function uploadFile(file) {
     updateData(data)
     dataSelectLabel.innerHTML = file.name
     filename = file.name
-    urlAddress = null
+    urlField.value = null
   }
 
   reader.addEventListener("load", parseFile, false);
@@ -359,6 +360,8 @@ gFieldSelect.addEventListener("change", e => {
 
 document.getElementById("data-select").addEventListener("change", e => {
   const file = e.target.files[0]
+  urlField.value = ""
+  hashParams.delete("url")
   uploadFile(file)
 })
 
@@ -374,7 +377,7 @@ async function getData(url) {
 
     if (data) {
       updateData(data)
-      urlAddress = url
+      //urlAddress = url
       filename = null
     }
    
@@ -390,7 +393,17 @@ async function getData(url) {
 
 document.getElementById("get-button").addEventListener("click", () => {
   const url = urlField.value
+  dataSelectLabel.innerHTML = "NO FILE"
   getData(url)
+})
+
+document.getElementById("default-data-button").addEventListener("click", () => {
+  dataSelectLabel.innerHTML = "NO FILE"
+  urlField.value = ""
+  //hashParams.delete("url")
+  getDefaultData().then(data => {
+    updateData(data)
+  })
 })
 
 runButton.addEventListener("click", () => {
@@ -578,9 +591,37 @@ if (fieldValues.file) {
     runData(data)
   })
 } else {
-  d3.json("data/data.json").then(data => {
-    dataSelectLabel.innerHTML = "mortality.csv"
+  getDefaultData().then(data => {
     updateData(data)
     runData(data)
   })
+}
+
+// By default, call CDC API to get mortality data for the US from 2014 to 2022 (two datasets).
+async function getDefaultData() {
+  const data = []
+  
+  try {
+    let data14_19 = await (await fetch(
+      "https://data.cdc.gov/resource/3yf8-kanr.json?jurisdiction_of_occurrence='United States'")).json()
+    data14_19.forEach((row,i) => {
+      data.push({date: row.weekendingdate, all_cause_mortality: row.allcause, t: i+1})
+    })
+    
+    let data20_22 = await (await fetch(
+      "https://data.cdc.gov/resource/muzy-jte6.json?jurisdiction_of_occurrence='United States'")).json()
+    data20_22.forEach((row,i) => {
+      data.push({date: row.week_ending_date, all_cause_mortality: row.all_cause, t: data14_19.length+i+1})
+    })
+
+    if (data14_19.length < 1 || data20_22.length < 1) {
+      throw "Couldn't read mortality data from CDC"
+    }
+  } catch (e) {
+    // Load default data if anything fails
+    console.error(e)
+    return await d3.json("data/data.json")
+  }
+
+  return data
 }
