@@ -39,6 +39,37 @@ const runButton = document.getElementById("run-button")
 const exportAllToggle = document.getElementById("export-all-toggle")
 const exportButton =  document.getElementById("export-button")
 
+const informTooltip = document.createElement("div")
+informTooltip.setAttribute("class", "inform-tooltip")
+document.getElementById("body").appendChild(informTooltip)
+
+const paramTips = [
+  ["param-label-tp", "How far into the future to forecast."],
+  ["param-label-E", "How many previous values to embed each neighbor with."],
+  ["param-label-nn", "How many nearest dynamic neighbors to use."],
+  ["param-label-theta", "Determines how much the neighbor's distance affects its weight. When θ = 0 all neighbors are weighted equally."],
+  ["param-label-kernel-width", "The  width of the kernels used to generate the shaded forecasting area, relative to the standard deviation of the data."],
+  ["param-label-export", "If checked, each neighbor's future is exported as a seperate time series. Otherwise, the point forecasts are exported."]
+]
+
+for (const paramTip of paramTips) {
+  document.getElementById(paramTip[0]).addEventListener("mouseenter", e => {
+    informTooltip.style.visibility = "visible"
+    informTooltip.style.left = e.target.offsetLeft + 30 + "px"
+    informTooltip.style.top = e.target.offsetTop + 20 + "px"
+    informTooltip.innerHTML = paramTip[1]
+  })
+
+  document.getElementById(paramTip[0]).addEventListener("mouseleave", e => {
+    informTooltip.style.visibility = "hidden"
+  })
+}
+
+
+
+
+
+
 
 let fieldValues = {
   E: "6", nn: "8", theta: "1.0", tp: "16", kw: "1.0", weight: "true", date: "false",
@@ -89,7 +120,6 @@ tFieldToggle.checked = fieldValues.timeIsDate  == "true" ? true : false
 
 let data = null
 let fData = null
-let filename = null
 function updateData(newData) {
   data = newData
   const fields = Object.keys(data[0])
@@ -317,7 +347,6 @@ for (const collapsible of collapsibles) {
 const dataSelectLabel = document.getElementById("data-select-label")
 dataSelectLabel.innerHTML = "NO FILE"
 
-let urlAddress = null
 
 function uploadFile(file) {
   
@@ -331,7 +360,7 @@ function uploadFile(file) {
     }
     updateData(data)
     dataSelectLabel.innerHTML = file.name
-    filename = file.name
+    hashParams.set("file", file.name)
     urlField.value = null
   }
 
@@ -379,10 +408,10 @@ async function getData(url) {
       data = await d3.csv(url)
     }
 
+    hashParams.set("url", url)
     if (data) {
       updateData(data)
-      //urlAddress = url
-      filename = null
+      hashParams.delete("file")
     }
    
 
@@ -397,6 +426,7 @@ async function getData(url) {
 
 document.getElementById("get-button").addEventListener("click", () => {
   const url = urlField.value
+  hashParams.set("url", url)
   dataSelectLabel.innerHTML = "NO FILE"
   getData(url)
 })
@@ -404,7 +434,7 @@ document.getElementById("get-button").addEventListener("click", () => {
 document.getElementById("default-data-button").addEventListener("click", () => {
   dataSelectLabel.innerHTML = "NO FILE"
   urlField.value = ""
-  //hashParams.delete("url")
+  hashParams.delete("url")
   getDefaultData().then(data => {
     updateData(data)
   })
@@ -413,11 +443,11 @@ document.getElementById("default-data-button").addEventListener("click", () => {
 runButton.addEventListener("click", () => {
   hashParams.delete("t")
   delete fieldValues.t
-  if (filename != null) {
-    hashParams.set("file", filename)
-  } else if (urlAddress != null) {
-    hashParams.set("url", urlAddress)
-  }
+  // if (filename != null) {
+  //   hashParams.set("file", filename)
+  // } else if (urlAddress != null) {
+  //   hashParams.set("url", urlAddress)
+  // }
   
   hashParams.set("tField", tFieldSelect.value)
   hashParams.set("vField", vFieldSelect.value)

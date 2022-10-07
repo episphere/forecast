@@ -47,6 +47,8 @@
         (with values which are either valid dates or integers) and at least one value field 
         (with values which are numbers). The data can also have a group field. Within each group, 
         the time values should be evenly spaced. 
+        <a href="http://127.0.0.1:8887/?r=1#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL">Click here</a> to see an example of loading Florida 
+        COVID-19 data directly from the CDC API. 
         <div>
           <div class="file-select" >
             <label for="data-select">File:</label>
@@ -127,29 +129,29 @@
           <div id="plot-params" class="params">
             <div>
               
-              <label for="nn">Horizon<sup title="How far into the future to forecast." class="help material-icons">help</sup>:</label>
+              <label for="tp" class="inform-label" id="param-label-tp">Horizon:</label>
               <input id="param-input-tp" type="number" id="nn" value=16> 
             </div>
 
               <div>
-                <label for="E">Embedding<sup title="How many previous values to embed each neighbor with." class="help material-icons">help</sup>:</label>
-                <input id="param-input-E" type="number" value=6>
+                <label for="E" id="param-label-E">Embedding:</label>
+                <input id="param-input-E" class="inform-label" type="number" value=6>
               </div>
 
               <div>
-                <label for="param-input-nn">Neighbors<sup title="How many nearest dynamic neighbors to use." class="help material-icons">help</sup>:</label>
+                <label for="param-input-nn" id="param-label-nn" class="inform-label">Neighbors:</label>
                 <input id="param-input-nn" type="number" value=8>
               </div>
 
               <div>
-                <label for="param-input-theta">θ<sup title="Determines how much the neighbor's distance affects its weight. When θ = 0 all neighbors are weighted equally." class="help material-icons">help</sup>:</label>
+                <label for="param-input-theta" id="param-label-theta" class="inform-label">θ:</label>
                 <input id="param-input-theta" type="number" value=1.0 step=0.1> 
               </div>
 
               <button id="param-run" type="button">Run</button>
 
               <div>
-                <label for="param-kernel-width">Kernel Width<sup title="The relative width of the kernels used to generate the shaded forecasting area." class="help material-icons">help</sup>:</label>
+                <label for="param-kernel-width" id="param-label-kernel-width" class="inform-label">Kernel Width:</label>
                 <input id="param-kernel-width" type="number" value=0.1 step="0.1">
               </div>
 
@@ -164,7 +166,7 @@
               </div>
 
               <div style="margin-top: 10px">
-                <label for="export-all-toggle">Export All Futures<sup title="If checked, each neighbor's future is exported as a seperate time series. Otherwise, the point forecasts are exported." class="help material-icons">help</sup></label>
+                <label for="export-all-toggle" id="param-label-export" class="inform-label">Export All Futures</label>
                 <input type="checkbox" id="export-all-toggle" checked/> 
               </div>
 

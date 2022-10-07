@@ -80,6 +80,23 @@ body {
   float: left;
 }
 
+.inform-label:hover {
+  color: grey
+}
+
+.inform-tooltip {
+  position: absolute;
+  width: fit-content;
+  visibility: hidden;
+  background-color: rgba(255, 255, 255, 1);
+  border: solid;
+  border-width: 1px;
+  border-radius: 2px;
+  padding: 5px;
+  font-size: .6em;
+  max-width: 200px;
+}
+
 .plot-row {
   /* display: flex;
   clear: both;
@@ -243,6 +260,9 @@ g {
 .file-select-label {
   font-size: .8em;
   font-style: italic;
+}
+#file-select-content {
+  font-size: .8em;
 }
 
 .url-select {
