@@ -59,7 +59,7 @@ body {
 
 .params {
   padding-top: 30px;
-  font-size: .9em;
+  font-size: .8em;
   max-width: 168px;
   /* align-content: end; */
   /* display: flex; */
@@ -78,6 +78,15 @@ body {
 .plots {
   /* margin-top: 20px; */
   float: left;
+}
+
+
+/* .inform-label {
+  font-size: .9em;
+} */
+
+.plot-params > * > label {
+  font-size: .8em;
 }
 
 .inform-label:hover {

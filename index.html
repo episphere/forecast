@@ -47,7 +47,8 @@
         (with values which are either valid dates or integers) and at least one value field 
         (with values which are numbers). The data can also have a group field. Within each group, 
         the time values should be evenly spaced. 
-        <a href="http://127.0.0.1:8887/?r=1#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL">Click here</a> to see an example of loading Florida 
+        <a 
+          onclick="window.location.href = 'http://127.0.0.1:8887/#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL'; location.reload()">Click here</a> to see an example of loading Florida 
         COVID-19 data directly from the CDC API. 
         <div>
           <div class="file-select" >
@@ -134,7 +135,7 @@
             </div>
 
               <div>
-                <label for="E" id="param-label-E">Embedding:</label>
+                <label for="E" id="param-label-E" >Embedding:</label>
                 <input id="param-input-E" class="inform-label" type="number" value=6>
               </div>
 

@@ -66,17 +66,12 @@ for (const paramTip of paramTips) {
 }
 
 
-
-
-
-
-
 let fieldValues = {
-  E: "6", nn: "8", theta: "1.0", tp: "16", kw: "1.0", weight: "true", date: "false",
+  E: "6", nn: "8", theta: "1.0", tp: "16", kw: "1.0", weight: "true", date: "true",
   tField: "date", vField: "deaths", sField: "___s", timeIsDate: "true"
 }
 
-const queryString = window.location.hash;
+const queryString = window.location.hash
 let hashParams = new URLSearchParams(queryString.slice(1))
 fieldValues = {...fieldValues, ...Object.fromEntries(hashParams.entries())}
 
@@ -628,7 +623,8 @@ if (fieldValues.file) {
     runData(data)
   })
 } else {
-  getDefaultData().then(data => {
+  //getDefaultData().then(data => {
+  d3.json("data/data.json").then(data => {
     updateData(data)
     runData(data)
   })

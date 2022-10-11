@@ -222,7 +222,7 @@ export function kdeOld(XW, opts={}) {
   return {ps: vs, kernelPs: kernelVs}
 }
 
-const c = 0.001
+const c = 0.0001
 export function kde(XW, opts={}) {
   opts = Object.assign({kernelWidth: null, n: 80}, opts)
   let {kernelWidth, n} = opts
@@ -234,7 +234,8 @@ export function kde(XW, opts={}) {
   const norm = gaussian(0, 1)
 
   const vRange = d3.extent(XW, d => d[0])
-  const domain = [vRange[0]-kernelWidth, vRange[1]+kernelWidth]
+  //const domain = [vRange[0]-kernelWidth/2, vRange[1]+kernelWidth/2]
+  const domain = [vRange[0]-kernelWidth*0.5, vRange[1]+kernelWidth*0.5]
   const step = (domain[1] - domain[0])/n
   const s = 1 / (norm.pdf(0)*XW.length)
   const h = Math.sqrt((-2/kernelWidth**2)*Math.log(c*Math.sqrt(2*Math.PI)))

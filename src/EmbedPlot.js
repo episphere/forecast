@@ -191,6 +191,7 @@ export class EmbedPlot extends Plot {
         forecast.kdeRes.ps.forEach(d => vs.push(d.v))
       }
     }
+    
 
     let yExtent =  d3.extent([
       ...d3.extent(this.allValues, d => d[this.vField]),
@@ -309,7 +310,12 @@ export class EmbedPlot extends Plot {
     const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
     for (const forecast of nowForecasts) {
       const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
-      const kdeRes = [...forecast.kdeRes.ps]
+      const gap = forecast.kdeRes.ps[1].v-forecast.kdeRes.ps[0].v
+      const kdeRes  = [
+        {v: forecast.kdeRes.ps[0].v-gap, p:0}, 
+        ...forecast.kdeRes.ps, 
+        {v: forecast.kdeRes.ps[forecast.kdeRes.ps.length-1].v+gap, p:0}
+      ]
       const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
       gradient.selectAll("stop")
         .data(kdeRes.reverse())

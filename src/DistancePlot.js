@@ -38,7 +38,6 @@ export class DistancePlot extends Plot {
       widths.push(tick.getBBox().width)
     }
     const maxWidth = d3.max(widths)
-    console.log(maxWidth, this.scaleX.step())
     if (maxWidth > this.scaleX.step()) {
       this.nodes.axisX.selectAll(".tick text").attr("visibility", "hidden")
       this.nodes.axisX.select(`#${this.id}-x-label`).text("neighbor")

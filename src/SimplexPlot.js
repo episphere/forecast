@@ -438,7 +438,16 @@ export class SimplexPlot extends Plot {
     const nowForecasts = this.forecasts.filter(d => d.baseT == this.state.plotT)
     for (const forecast of nowForecasts) {
       const domainSize = Math.abs(this.scaleY.domain()[1] - this.scaleY.domain()[0])
-      const kdeRes = [...forecast.kdeRes.ps]
+      const gap = forecast.kdeRes.ps[1].v-forecast.kdeRes.ps[0].v
+
+      // Add p=0 dummy elements to gradient to ensure the first and last colors don't stretch to the 
+      // start and end of the gradient range respectively. 
+      const kdeRes = [
+        {v: forecast.kdeRes.ps[0].v-gap, p:0}, 
+        ...forecast.kdeRes.ps, 
+        {v: forecast.kdeRes.ps[forecast.kdeRes.ps.length-1].v+gap, p:0}
+      ]
+      
       const gradient = this.nodes.gradients.select(`#${this.id}-gradient-${forecast.tp}`)
       gradient.selectAll("stop")
         .data(kdeRes.reverse())
