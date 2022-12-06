@@ -1,5 +1,5 @@
 import { Plot } from "./Plot.js"
-import * as d3 from "https://cdn.skypack.dev/d3@7"
+//import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
 
 // TODO: Responde to "show dates"
 export class DistancePlot extends Plot {
