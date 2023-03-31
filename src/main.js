@@ -106,6 +106,11 @@ gFieldSelect.disabled = true
 tFieldToggle.disabled = true
 tFieldToggle.checked = fieldValues.timeIsDate  == "true" ? true : false
 
+const exampleLink = document.getElementById("example-link")
+exampleLink.addEventListener("click", e => {
+  window.location.href = `${window.location.origin}${window.location.pathname}#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL`
+  window.location.reload()
+})
 
 
 //const hashParams = {}
@@ -241,27 +246,27 @@ function runData(data) {
     plotT:  parseInt(fieldValues.t),
     dateField: tFieldToggle.checked ? tField : null,
     showDates: dateToggle.checked,
-    width: 520, height: 340,
+    width: 640, height: 420,
     margin: {left: 60, right: 30, top: 35, bottom: 30},
   })
 
   embedPlot = new EmbedPlot(document.getElementById("plot_alt"), fData, forecasts, vField, {
     state: simplexPlot.state,
-    width: 340, height: 340, 
+    width: 420, height: 420, 
     margin: {left: 60, right: 30, top: 35, bottom: 30}
   })
   
-  const dataEmbed = delayEmbed(fData, [vField], E)
-  phasePlot = new PhasePlot(document.getElementById("plot_phase"), dataEmbed, forecasts, vField, {
+  //const dataEmbed = delayEmbed(fData, [vField], E)
+  phasePlot = new PhasePlot(document.getElementById("plot_phase"), data, forecasts, vField, {
     state: simplexPlot.state,
-    width: 340, height: 340, 
+    width: 420, height: 420, 
     margin: {left: 60, right: 30, top: 30, bottom: 30}
   })
   
   distancePlot = new DistancePlot(document.getElementById("plot_weight"), forecasts, vField, {
     state: simplexPlot.state,
     weightColorFunction: embedPlot.weightColorScale,
-    width: 340, height: 340, 
+    width: 420, height: 420, 
     margin: {left: 60, right: 30, top: 20, bottom: 35}
   })
 
@@ -293,16 +298,21 @@ function runData(data) {
 function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
   timeContainer.innerHTML = ""
 
+  
+
   const timeSlider = document.createElement("input")
   timeSlider.setAttribute("type", "range")
   timeSlider.setAttribute("class", "slider")
 
-  const sliderLeft = plotElement.getBoundingClientRect().left + scaleX(tRange[0]) - 10
+  //const sliderLeft = plotElement.getBoundingClientRect().left + scaleX(tRange[0]) - 10
+  const sliderLeft = 0
   const sliderWidth = scaleX(tRange[1]) - scaleX(tRange[0]) + 10
+  const sliderTop = plotElement.getBoundingClientRect().height
   timeSlider.setAttribute("style", `
     width: ${sliderWidth}px;
     position: absolute;
     left: ${sliderLeft}px;
+    top: ${sliderTop}px;
   `)
   timeSlider.setAttribute("min", tRange[0])
   timeSlider.setAttribute("max", tRange[1])
@@ -316,7 +326,7 @@ function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
     font-size: 10px;
     position: absolute;
     left: ${sliderLeft - labelText.length*6.5}px;
-    top: 0px;
+    top: ${sliderTop-3}px;
   `)
 
   timeSlider.addEventListener("input", () => {

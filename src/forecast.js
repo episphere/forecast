@@ -7,9 +7,19 @@ export function simplex(data, vField, tp, E, nn, theta, args = {}) {
   args = {
     tau: 1,
     forecastDomain: null,
+    dateField: null,
     ...args
   }
-  let {tau, forecastDomain} = args
+  let {tau, forecastDomain, dateField} = args
+
+  if (data[0].t == undefined) {
+    if (dateField) {
+      data.forEach(row => row.date = new Date(row.date))
+      data.sort((a,b) => a.date - b.date)
+    }
+
+    data.forEach((row, i) => row.t = i)
+  }
 
   const dataEmbed = delayEmbed(data, [vField], E, {tau: tau})
   const tExtent = d3.extent(data, d => d.t)

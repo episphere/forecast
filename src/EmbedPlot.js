@@ -1,5 +1,6 @@
 import { Plot } from "./Plot.js"
-//import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+
 
 // TODO: FIX REDRAWING BUG (also on other plots except TS)
 export class EmbedPlot extends Plot {
@@ -49,6 +50,7 @@ export class EmbedPlot extends Plot {
     this.state.defineProperty("focused", null)
     this.state.defineProperty("plotT", this.tRange[1])    
     this.state.defineProperty("plotTp", this.tp)
+    this.state.defineProperty("disabled", new Set())
     this.state.addListener((p, v) => this.stateChanged(p, v))
 
     this.createBase()

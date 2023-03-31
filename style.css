@@ -57,6 +57,11 @@ body {
     margin-top: 10px;
 } */
 
+.state-link {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .params {
   padding-top: 30px;
   font-size: .8em;
@@ -69,6 +74,7 @@ body {
   align-items: flex-end;
   row-gap: 8px;
   display: none;
+  justify-content: center;
 }
 
 .params input {
@@ -220,7 +226,7 @@ g {
 .time-control {
   display: block;
   position: absolute;
-  top: 334px;
+  /* top: 334px; */
   right: 495px;
 }
 
@@ -259,7 +265,7 @@ g {
 }
 .file-select-block {
   font-family: Sans-Serif;
-  width: 830px;
+  width: 1040px;
 }
 .file-select {
   margin-top: 12px;

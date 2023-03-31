@@ -1,7 +1,10 @@
 import { Plot } from "./Plot.js"
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+import { delayEmbed } from "./forecast.js"
+
 
 export class PhasePlot extends Plot {
-  constructor(element, dataEmbed, forecasts, vField, opts = {}) {
+  constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
       weightColoring: true,
       plotE: null,
@@ -11,7 +14,8 @@ export class PhasePlot extends Plot {
       height: 480
     })
 
-    this.dataEmbed = dataEmbed
+    this.data = data 
+    this.dataEmbed = delayEmbed(data, [vField], forecasts[0].E)
     
     this.vField = vField
 
@@ -51,6 +55,7 @@ export class PhasePlot extends Plot {
     this.state.defineProperty("focused", null)
     this.state.defineProperty("plotT", this.tRange[1])    
     this.state.defineProperty("plotTp", this.tp)
+    this.state.defineProperty("disabled", new Set())
     this.state.addListener((p, v) => this.stateChanged(p, v))
 
     this.createBase()

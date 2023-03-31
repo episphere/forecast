@@ -1,5 +1,5 @@
 import { DynamicState } from "./DynamicState.js"
-//import * as d3 from "https://cdn.skypack.dev/d3@7"
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
 import {default as gaussian}  from 'https://cdn.skypack.dev/gaussian@1.2.0?min'
 import { nanoid } from 'https://cdn.jsdelivr.net/npm/nanoid/nanoid.js'
 

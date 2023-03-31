@@ -1,5 +1,6 @@
 import { Plot } from "./Plot.js"
-//import * as d3 from "https://cdn.skypack.dev/d3@7"
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+
 
 // TODO: Double click to change date.
 // TODO: Better proportional coloring.
@@ -23,6 +24,7 @@ export class SimplexPlot extends Plot {
       width: 640, 
       height: 480
     })
+
 
     this.data = data
     if (this.dateField) {
@@ -416,7 +418,10 @@ export class SimplexPlot extends Plot {
     //   }
     // }
 
-    this.updateKernelWidth(this.forecasts)
+    if (this.forecasts[0].kdeRes) {
+      this.updateKernelWidth(this.forecasts)
+    }
+   
 
     this.nodes.confRects
       .selectAll("rect")

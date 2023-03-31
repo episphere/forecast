@@ -4,6 +4,8 @@
 
 <head>
     <meta charset="utf-8">
+    <title>EpiForecast</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
 
     <script src="src/lib/d3/d3.min.js"></script>
     <!-- <script src="src/lib/taffydb/taffy.js"></script> -->
@@ -48,10 +50,19 @@
         (with values which are either valid dates or integers) and at least one value field 
         (with values which are numbers). The data can also have a group field. Within each group, 
         the time values should be evenly spaced. 
-        <a 
-          onclick="window.location.href = 'http://127.0.0.1:8887/#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL'; location.reload()">Click here</a> to see an example of loading Florida 
-        COVID-19 data directly from the CDC API. 
+        <!-- <a 
+          onclick="window.location.href = 'http://127.0.0.1:5500/#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL'; location.reload()">Click here</a> to see an example of loading Florida 
+        COVID-19 data directly from the CDC API.  -->
+
+        <!-- <a 
+        onclick="console.log(`${window.location.origin}${window.location.pathname}`); window.location.href = '${window.location.origin}${window.location.pathname}#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL'; location.reload()">Click here</a> to see an example of loading Florida 
+      COVID-19 data directly from the CDC API.  -->
+
+      <a id="example-link" class="state-link">Click here</a> to see an example of loading Florida 
+    COVID-19 data directly from the CDC API. 
+        
         <div>
+          
           <div class="file-select" >
             <label for="data-select">File:</label>
             <input type="file" id="data-select"  accept=".json,.csv" style="display: none;" />
