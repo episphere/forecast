@@ -1,9 +1,20 @@
 import { Plot } from "./Plot.js"
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
 
-// TODO: Responde to "show dates"
+/**
+ * The distance bar plot.
+ */
 export class DistancePlot extends Plot {
   
+    /**
+   * @param {Element} element HTML element
+   * @param {object[]} forecasts The forecasts, as output by the forecast.simplex function
+   * @param {string} vField Name of the value field
+   * @param {boolean} opts.weightColoring
+   * @param {number} opts.width
+   * @param {number} opts.height
+   * @param {DynamicState} state 
+   */
   constructor(element, forecasts, vField, opts = {}) {
     super(element, opts, {
       weightColoring: true,

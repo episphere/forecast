@@ -1,10 +1,25 @@
 import { Plot } from "./Plot.js"
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
 
-
-// TODO: FIX REDRAWING BUG (also on other plots except TS)
+/**
+ * The phase space plot.
+ */
 export class EmbedPlot extends Plot {
   
+  /**
+   * @param {Element} element HTML element
+   * @param {object[]} data The data, in the same format as the forecast.simplex function
+   * @param {object[]} forecasts The forecasts, as output by the forecast.simplex function
+   * @param {string} vField Name of the value field
+   * @param {number} opts.plotE
+   * @param {boolean} opts.weightColoring
+   * @param {boolean} opts.showShading
+   * @param {number} opts.hoverRadius
+   * @param {number[]} opts.tRangePlot
+   * @param {number} opts.width
+   * @param {number} opts.height
+   * @param {DynamicState} state 
+   */
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
       weightColoring: true,
@@ -288,7 +303,10 @@ export class EmbedPlot extends Plot {
         .attr("stroke-width", 2)
         .attr("stroke", "purple")
 
-    this.updateKernelWidth(this.forecasts)
+    if (this.forecasts[0].kde) {
+      this.updateKernelWidth(this.forecasts)
+    }
+    
 
     const rectWidth = this.scaleX(1) - this.scaleX(0) 
     this.nodes.confRects

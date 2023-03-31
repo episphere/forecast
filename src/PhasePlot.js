@@ -2,8 +2,22 @@ import { Plot } from "./Plot.js"
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
 import { delayEmbed } from "./forecast.js"
 
-
+/**
+ * The phase space plot.
+ */
 export class PhasePlot extends Plot {
+  /**
+   * @param {Element} element HTML element
+   * @param {object[]} data The data, in the same format as the forecast.simplex function
+   * @param {object[]} forecasts The forecasts, as output by the forecast.simplex function
+   * @param {string} vField Name of the value field
+   * @param {number} opts.plotE
+   * @param {boolean} opts.weightColoring
+   * @param {number} opts.hoverRadius
+   * @param {number[]} opts.tRangePlot
+   * @param {number} opts.width
+   * @param {number} opts.height
+   */
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
       weightColoring: true,

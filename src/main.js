@@ -4,6 +4,8 @@ import { PhasePlot } from "./PhasePlot.js"
 import { DistancePlot } from "./DistancePlot.js"
 import {simplex, fcDisable, delayEmbed, kde} from "./forecast.js"
 
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+
 // TODO: Cache data
 // TODO: Progress bar
 // TODO: Fix time/date in time selection control

@@ -2,11 +2,32 @@ import { Plot } from "./Plot.js"
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
 
 
-// TODO: Double click to change date.
-// TODO: Better proportional coloring.
-// TODO: Minimizable tooltip
+/**
+ * The simplex forecast plot.
+ */
 export class SimplexPlot extends Plot {
   
+  /**
+   * 
+   * @param {Element} element HTML element
+   * @param {object[]} data The data, in the same format as the forecast.simplex function
+   * @param {object[]} forecasts The forecasts, as output by the forecast.simplex function
+   * @param {string} vField Name of the value field
+   * @param {number} opts.plotT
+   * @param {boolean} opts.weightColoring
+   * @param {boolean} opts.showDates
+   * @param {string} opts.dateField
+   * @param {boolean} opts.plotAllTp
+   * @param {boolean} opts.showAllProjLines
+   * @param {boolean} opts.showProjShades
+   * @param {number} opts.hp
+   * @param {number} opts.hoverRadius
+   * @param {number[]} opts.tRangePlot
+   * @param {boolean} opts.showShading
+   * @param {boolean} opts.showTooltip
+   * @param {number} opts.width
+   * @param {number} opts.height
+   */
   constructor(element, data, forecasts, vField, opts = {}) {
     super(element, opts, {
       plotT: null,
