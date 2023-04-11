@@ -12,7 +12,7 @@ import {default as gaussian}  from 'https://cdn.skypack.dev/gaussian@1.2.0?min'
  * @param {number} theta Affects the calculation of weight. The higher the value, the more distance affects the weight of each neighbor in the calculation.
  * @param {number[]} args.dateField The name of the date field.
  * @param {number[]} args.forecastDomain The time range in which to perform forecasting.
- * @returns 
+ * @returns {object[]} The forecasts. 
  */
 export function simplex(data, vField, tp, E, nn, theta, args = {}) {
 

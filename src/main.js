@@ -122,7 +122,8 @@ exampleLink.addEventListener("click", e => {
 
 let data = null
 let fData = null
-function updateData(newData) {
+function updateData(newData) {  
+
   data = newData
   const fields = Object.keys(data[0])
 
@@ -188,6 +189,9 @@ function updateData(newData) {
 let forecasts = []
 
 function runData(data) {
+  document.getElementById("plots").style.display = "none"
+  document.getElementById("loader").style.display = "block"
+
   const E = parseInt(paramInputE.value)
   const nn = parseInt(paramInputNn.value)
   const theta = parseFloat(paramInputTheta.value)
@@ -295,6 +299,9 @@ function runData(data) {
     simplexPlot.element, simplexPlot.scaleX, simplexPlot.tForecastRange, simplexPlot.state)
 
   document.getElementById("plot-params").style.display = "flex"
+  document.getElementById("plots").style.display = "inline-block"
+  document.getElementById("loader").style.display = "none"
+
 }
 
 function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
@@ -314,7 +321,7 @@ function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
     width: ${sliderWidth}px;
     position: absolute;
     left: ${sliderLeft}px;
-    top: ${sliderTop}px;
+    bottom: -6px;
   `)
   timeSlider.setAttribute("min", tRange[0])
   timeSlider.setAttribute("max", tRange[1])
