@@ -601,6 +601,7 @@ export class SimplexPlot extends Plot {
     const dist = Math.hypot(p[0] - e.offsetX, p[1] - e.offsetY)
     
     if (dist < this.hoverRadius) {
+      this.element.style.cursor = "pointer"
       this.state.focused = neighbor.t 
 
       let values = [["t", neighbor.t]]
@@ -634,6 +635,7 @@ export class SimplexPlot extends Plot {
       this.nodes.tooltip.style("opacity", 0)
       this.nodes.tooltip.style("pointer-events", "none")
       this.state.focused = null
+       this.element.style.cursor = "default"
       //this.element.style.cursor = "auto"
     }
   } 

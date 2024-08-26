@@ -115,6 +115,7 @@ header {
   justify-content: center;
   background-color: #f1eceb;
   padding: var(--main-padding);
+  position: relative;
   gap: 10px;
 }
 
@@ -342,6 +343,7 @@ text {
   display: flex;
   gap: 6px;
   align-items: center;
+  font-size: 14px;
 }
 
 .slider {

@@ -91,7 +91,8 @@ const exportButton =  document.getElementById("export-button")
 
 const informTooltip = document.createElement("div")
 informTooltip.setAttribute("class", "inform-tooltip")
-document.getElementById("item1").appendChild(informTooltip)
+// document.getElementById("item1").appendChild(informTooltip)
+document.getElementById("content").appendChild(informTooltip)
 
 const paramTips = [
   ["param-label-tp", "How far into the future to forecast."],
@@ -105,8 +106,8 @@ const paramTips = [
 for (const paramTip of paramTips) {
   document.getElementById(paramTip[0]).addEventListener("mouseenter", e => {
     informTooltip.style.visibility = "visible"
-    // informTooltip.style.left = e.target.offsetLeft + 30 + "px"
-    // informTooltip.style.top = e.target.offsetTop + 20 + "px"
+    informTooltip.style.left = e.target.offsetLeft + 30 + "px"
+    informTooltip.style.top = e.target.offsetTop + 20 + "px"
     informTooltip.innerHTML = paramTip[1]
   })
 
@@ -427,7 +428,7 @@ function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
 
   const sliderWidth = scaleX.range()[1] - scaleX.range()[0] - 60
   timeSlider.style.width = sliderWidth + "px"
-  timeSlider.style.marginLeft = "80px"
+  timeSlider.style.marginLeft = "0px"
 
   
   // timeContainer.appendChild(label)
@@ -582,12 +583,24 @@ exportButton.addEventListener("click", () => {
       }
     }
   }
-  let csvContent = "data:text/csv;charset=utf-8," 
-      + content.map(d => d.join(",")).join("\n")
+  let csvContent = content.map(d => d.join(",")).join("\n")
 
-  var encodedUri = encodeURI(csvContent)
-  window.open(encodedUri)
+  downloadData(csvContent, "epiforcast_exported_data.csv")
+
+  // var encodedUri = encodeURI(csvContent)
+  // window.open(encodedUri)
 })
+
+function downloadData(data, filename) {
+  const blob = new Blob([data], { type: 'text/csv' })
+  const downloadLink = document.createElement('a')
+  downloadLink.download = filename
+  downloadLink.href = URL.createObjectURL(blob)
+  document.body.appendChild(downloadLink)
+  downloadLink.click()
+  URL.revokeObjectURL(downloadLink.href)
+  document.body.removeChild(downloadLink)
+}
 
 function updateForecasts() {
   runData(data)
