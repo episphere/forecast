@@ -330,8 +330,8 @@ header {
   padding: 5px;
   font-size: .8em;
   max-width: 200px;
-  left: 0;
-  top: 0;
+  /* left: 100px;
+  top: 20px; */
 }
 
 text {
