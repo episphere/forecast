@@ -1,154 +1,139 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-
-<head>
+  <head>
     <meta charset="utf-8">
-    <title>EpiForecast</title>
-    <link rel="icon" type="image/png" href="images/favicon.png?v=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SpotCluster</title>
+    <link rel="icon" href="images/favicon.png">
+    <link crossorigin="anonymous" type="text/css" rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" defer />
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous"> -->
+    <link href="style.css" rel="stylesheet">
+  </head>
 
-    <!-- <script src="src/lib/d3/d3.min.js"></script> -->
-    <!-- <script src="src/lib/taffydb/taffy.js"></script> -->
-    <!-- <script src="src/lib/gaussian.js"></script> -->
-    <!-- <script src="src/forecast.js"></script> -->
-
-    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" 
-      rel="stylesheet" 
-      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" 
-      crossorigin="anonymous"> -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet">
-
-    <link rel="stylesheet" href="style.css">
-</head>
-
-
-<body id="body">
-  <div id="file-upload-overlay" class="overlay" style="display:none"></div>
-
-  <div class="top">
-    <div class="top-element"><h1>epiForecast</h1></div>
-    <span class="top-link"> [<a href="https://github.com/episphere/forecast">code</a>] </span>
-    <span class="top-link"> [<a href="https://observablehq.com/@siliconjazz/edm-interpretable-forecasting">notebook</a>] </span>
-    <span class="top-link"> [<a href="https://youtu.be/kU31yz6kiQA">video</a>] </span>
-    <span class="top-link"> [<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10069763/">paper</a>] </span>
-  </div>
-
-  <div class="main">
-
-    <div id="file-warning" class="file-request"></div>
-
-    <div class="file-select-block">
-      <div class="collapsible">
-        Data Configuration
-        <span class="collapsible-arrow material-icons">arrow_drop_down</span>
+  <body>
+    <header>
+      <!-- <div id="logo-container">
+        <i id="logo-icon" class="fas fa-globe-americas"></i>
+        <span id="logo-text">MoranPlot Dashboard</span>
       </div>
-      <div id="file-select-content" class="content">
-        Load and configure the data here. You can either upload a data file or link to a 
-        <a href="https://enable-cors.org/"> CORS-enabled</a> data URL. The data must be in CSV or 
-        JSON format. The data should consist of a series of rows with at least one time field 
-        (with values which are either valid dates or integers) and at least one value field 
-        (with values which are numbers). The data can also have a group field. Within each group, 
-        the time values should be evenly spaced. 
-        <!-- <a 
-          onclick="window.location.href = 'http://127.0.0.1:5500/#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL'; location.reload()">Click here</a> to see an example of loading Florida 
-        COVID-19 data directly from the CDC API.  -->
 
-        <!-- <a 
-        onclick="console.log(`${window.location.origin}${window.location.pathname}`); window.location.href = '${window.location.origin}${window.location.pathname}#tField=submission_date&vField=new_case&sField=NONE&timeIsDate=true&url=https%3A%2F%2Fdata.cdc.gov%2Fresource%2F9mfq-cb36.json%3Fstate%3DFL'; location.reload()">Click here</a> to see an example of loading Florida 
-      COVID-19 data directly from the CDC API.  -->
-
-      <a id="example-link" class="state-link">Click here</a> to see an example of loading Florida 
-    COVID-19 data directly from the CDC API. 
-        
-        <div>
-          
-          <div class="file-select" >
-            <label for="data-select">File:</label>
-            <input type="file" id="data-select"  accept=".json,.csv" style="display: none;" />
-            <input type="button" value="Browse..." onclick="document.getElementById('data-select').click();" />
-            <label id="data-select-label" class="file-select-label" for="data-select">No file selected</label>
-          </div>
-
-          <span class="or"><b>OR</b></span>
-
-          <span class="url-select">
-            <label for="url-input">URL:</label>
-            <input id="url-input" type="url">
-            <button  id="get-button" type="button">Get</button>
-          </span>
-
-          <span class="or"><b>OR</b></span>
-
-          <button id="default-data-button" type="button">Default Mortality Data</button>
-
-          <span id="upload-error"></span>
+      <div id="links-container">
+        <a href="https://github.com/episphere/moranplot"><i class="fa-brands fa-github"></i> </a>
+      </div> -->
+      <div id="main-header">
+        <div id="logo-container">
+          <i id="logo-icon" class="fas fa-eye"></i>
+          <!-- <img src="logo.png" id="logo" alt="logo" > -->
+          <span id="logo-text">EpiForecast</span>
         </div>
-        <div id="field-selects">
-          <div class="field-stack">
-            <div>
-              <label for="tfield-select">Time Field:</label>
-              <select class="field-select" id="tfield-select" /></select>
-            </div>
+
+        <div id="links-container">
+          
+          <a title="Paper" href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0277149"><i class="fas fa-scroll"></i> </a>
+          <a title="Video" href="https://youtu.be/kU31yz6kiQA"><i class="fab fa-youtube"></i> </a>
+          <a title="Notebook" href="https://observablehq.com/@siliconjazz/edm-interpretable-forecasting"><i class="fa-solid fa-circle-info"></i> </a>
+          <a title="GitHub" href="https://github.com/episphere/forecast"><i class="fa-brands fa-github"></i> </a>
+          
+        </div>
+      </div>
+      <!-- <div id="info-header"><p>Entry for the  <a href="http://biovis.net/2024/biovisChallenges_vis/">Bio+MedVis 2024</a>  redesign challenge (demo dashboard)</p> </div> -->
+    </header>
+
+    <div id="content">
+      <div id="file-warning" class="file-request"></div>
+      <div id="data-config" class="dashboard-card closed">
+        <div class="collapsible">
+          <span>Data Configuration</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+
+        <div id="file-select-content" >
+          Load and configure the data here. You can either upload a data file or link to a 
+          <a href="https://enable-cors.org/"> CORS-enabled</a> data URL. The data must be in CSV or 
+          JSON format. The data should consist of a series of rows with at least one time field 
+          (with values which are either valid dates or integers) and at least one value field 
+          (with values which are numbers). The data can also have a group field. Within each group, 
+          the time values should be evenly spaced. 
+  
+          <a id="example-link" class="state-link">Click here</a> to see an example of loading Florida 
+        COVID-19 data directly from the CDC API. 
             
             <div>
-              <input type="checkbox" id="tfield-toggle" checked>
-              <label>Field Is Date</label><br>
-            </div>
-          </div> 
-          
-          <div>
-            <label for="vfield-select">Value Field:</label>
-            <select class="field-select" id="vfield-select"></select>
-        </div>
-
-          <div class="field-stack" style="align-items: flex-end">
-            <div>
-              <label for="gfield-select">Group Field:</label>
-              <select class="field-select" id="gfield-select"></select>
-            </div>
-            <div>
-              <label for="g-select">Group:</label>
-              <select class="field-select" id="g-select"></select>
-            </div>
-          </div>
-
-          <div style="margin-left: auto;">
-            <button  id="run-button" type="button">Run</button>
-          </div>
-        
-        </div>
-
-        
-      
-
-      </div>
-    </div>
-
-    <div id="loader-container">
-      <div id="loader"></div>
-    </div>
-   
+              
+              <div class="file-select" >
+                <label for="data-select">File:</label>
+                <input type="file" id="data-select"  accept=".json,.csv" style="display: none;" />
+                <input type="button" value="Browse..." onclick="document.getElementById('data-select').click();" />
+                <label id="data-select-label" class="file-select-label" for="data-select">No file selected</label>
+              </div>
     
-    <div id="plots" class="plots">
-
-      
-
-      <div class="plot-row">
-        <div class="plot">
-          <div id="plot_ts" ></div>
-          <div class="time-control"> 
-            <div id="time-slider-container" class="slidecontainer"> </div>
+              <span class="or"><b>OR</b></span>
+    
+              <span class="url-select">
+                <label for="url-input">URL:</label>
+                <input id="url-input" type="url">
+                <button  id="get-button" type="button">Get</button>
+              </span>
+    
+              <span class="or"><b>OR</b></span>
+    
+              <button id="default-data-button" type="button">Default Mortality Data</button>
+    
+              <span id="upload-error"></span>
+            </div>
+            <div id="field-selects">
+              <div class="field-stack">
+                <div>
+                  <label for="tfield-select">Time Field:</label>
+                  <select class="field-select" id="tfield-select" /></select>
+                </div>
+                
+                <div>
+                  <input type="checkbox" id="tfield-toggle" checked>
+                  <label>Field Is Date</label><br>
+                </div>
+              </div> 
+              
+              <div>
+                <label for="vfield-select">Value Field:</label>
+                <select class="field-select" id="vfield-select"></select>
+            </div>
+    
+              <div class="field-stack" style="align-items: flex-end">
+                <div>
+                  <label for="gfield-select">Group Field:</label>
+                  <select class="field-select" id="gfield-select"></select>
+                </div>
+                <div>
+                  <label for="g-select">Group:</label>
+                  <select class="field-select" id="g-select"></select>
+                </div>
+              </div>
+    
+              <div style="margin-left: auto; margin-top:auto;">
+                <button  id="run-button" type="button">Run</button>
+              </div>
+            </div>
           </div>
-        </div><div class="plot"><div id="plot_alt"></div></div>
       </div>
 
-      <div class="plot-row">
-          <div class="plot"><div id="plot_phase"></div></div>
 
+      <div id="grid-container">
+        <div id="item1" class="dashboard-card plot-card">
+          <div id="plot_ts" class="plot"></div>
+          <div class="time-control"> 
+            <div id="time-slider-container" class="slidecontainer"> 
+              <input id="c-time-slider" class="slider" type="range">
+              <span id="c-time-label"></span>
+            </div>
+          </div>
+        </div>
+        <div id="item2" class="dashboard-card plot-card"><div id="plot_alt"  class="plot"></div></div>
+        <div id="item3" class="dashboard-card plot-card"> <div id="plot_phase"  class="plot"></div></div>
+        <div id="item4" class="dashboard-card plot-card">
           <div id="plot-params" class="params">
             <div>
-              
               <label for="tp" class="inform-label" id="param-label-tp">Horizon:</label>
               <input id="param-input-tp" type="number" id="nn" value=16> 
             </div>
@@ -185,7 +170,7 @@
                 <input type="checkbox" id="show-dates-toggle" checked>
               </div>
 
-              <div style="margin-top: 10px">
+              <div style="margin-top:30px">
                 <label for="export-all-toggle" id="param-label-export" class="inform-label">Export All Futures</label>
                 <input type="checkbox" id="export-all-toggle" checked/> 
               </div>
@@ -198,24 +183,12 @@
               <button id="export-button" type="button">Export</button>
 
           </div>
-
-          <div class="plot"><div id="plot_weight"></div></div>
+        </div>
+        <div id="item5" class="dashboard-card plot-card"><div id="plot_weight"  class="plot"></div></div>
       </div>
     </div>
 
-    <div style="clear:both;"></div>
-    <!-- <div >
-      Hello!
-    </div> -->
+    <script src="src/main.js" type="module"></script>
 
-</div>
-
-  
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" 
-    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" 
-    crossorigin="anonymous"></script>
-</body>
-
-<!-- <script src="src/main_test.js" type="module"></script> -->
-<script src="src/main.js" type="module"></script>
+    <!-- <script src="src/SpotCluster.js" type="module"></script> -->
 </html>

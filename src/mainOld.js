@@ -6,59 +6,11 @@ import {simplex, fcDisable, delayEmbed, kde} from "./forecast.js"
 
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm"
 
-// ======== Resizing stuff =======
-const contentElement = document.getElementById("content");
-const gridElement = document.getElementById("grid-container");
-const phaseElement = document.getElementById("item3");
+// TODO: Cache data
+// TODO: Progress bar
+// TODO: Fix time/date in time selection control
+// TODO: d3 autotype
 
-let timeoutId;
-const resizeObserver = new ResizeObserver(() => {
-  clearTimeout(timeoutId);
-
-  const width = contentElement.getBoundingClientRect().width - 40;
-  const height = contentElement.getBoundingClientRect().height - 40;
-
-  const gridCellWidth = width / 9;
-  const gridCellHeight = height / 2;
-
-  const phaseWidth = gridCellWidth * 4;
-  const phaseHeight = gridCellHeight;
-
-  if (phaseWidth > phaseHeight) {
-    gridElement.style.maxWidth = 1*(phaseHeight/4)*9 + "px";
-  } else {
-    gridElement.style.maxHeight = 1*(phaseHeight/4)*9 + "px";
-  }
-
-  redraw();
-  // const plots = document.querySelectorAll(".plot")
-  // plots.forEach(element => {
-  //   element.innerHTML = '';
-  // })
-  // timeoutId = setTimeout(() => {
-  //   draw();
-  // }, 100);
-});
-resizeObserver.observe(content); 
-
-function redraw() {
-  clearTimeout(timeoutId);
-  const plots = document.querySelectorAll(".plot")
-  plots.forEach(element => {
-    element.innerHTML = '';
-  })
-  timeoutId = setTimeout(() => {
-    draw();
-  }, 200);
-}
-
-// const dashboardObserver  = new ResizeObserver(() => {
-//   redraw();
-// })
-// dashboardObserver.observe(gridElement);
-
-
-// ================================================================
 
 let vField = null
 let kw = 1
@@ -91,7 +43,7 @@ const exportButton =  document.getElementById("export-button")
 
 const informTooltip = document.createElement("div")
 informTooltip.setAttribute("class", "inform-tooltip")
-document.getElementById("item1").appendChild(informTooltip)
+document.getElementById("body").appendChild(informTooltip)
 
 const paramTips = [
   ["param-label-tp", "How far into the future to forecast."],
@@ -105,8 +57,8 @@ const paramTips = [
 for (const paramTip of paramTips) {
   document.getElementById(paramTip[0]).addEventListener("mouseenter", e => {
     informTooltip.style.visibility = "visible"
-    // informTooltip.style.left = e.target.offsetLeft + 30 + "px"
-    // informTooltip.style.top = e.target.offsetTop + 20 + "px"
+    informTooltip.style.left = e.target.offsetLeft + 30 + "px"
+    informTooltip.style.top = e.target.offsetTop + 20 + "px"
     informTooltip.innerHTML = paramTip[1]
   })
 
@@ -162,19 +114,8 @@ exampleLink.addEventListener("click", e => {
   window.location.reload()
 })
 
-// ====
 
-const dataConfigElement = document.querySelector("#data-config")
-const dataConfigCollElement = document.querySelector("#data-config .collapsible")
-dataConfigCollElement.addEventListener("click", () => {
-  dataConfigElement.classList.toggle("closed")
-  redraw();
-})
-
-
-
-
-// ==================================
+//const hashParams = {}
 
 // --- Data loading ---
 
@@ -248,8 +189,8 @@ function updateData(newData) {
 let forecasts = []
 
 function runData(data) {
-  // document.getElementById("plots").style.display = "none"
-  // document.getElementById("loader").style.display = "block"
+  document.getElementById("plots").style.display = "none"
+  document.getElementById("loader").style.display = "block"
 
   const E = parseInt(paramInputE.value)
   const nn = parseInt(paramInputNn.value)
@@ -306,49 +247,32 @@ function runData(data) {
     forecast.kdeRes = kde(VW, {kernelWidth, n: 40})
   }
 
-  redraw();
-
-
-  // document.getElementById("plot-params").style.display = "flex"
-  // document.getElementById("plots").style.display = "inline-block"
-  // document.getElementById("loader").style.display = "none"
-
-}
-
-function draw() {
-  const sField = gFieldSelect.value 
-  const tField = tFieldSelect.value
-
-  const tsElement = document.getElementById("plot_ts")
-  simplexPlot = new SimplexPlot(tsElement, fData, forecasts, vField, {
+  
+  simplexPlot = new SimplexPlot(document.getElementById("plot_ts"), fData, forecasts, vField, {
     plotT:  parseInt(fieldValues.t),
     dateField: tFieldToggle.checked ? tField : null,
     showDates: dateToggle.checked,
-    width: tsElement.getBoundingClientRect().width, height: tsElement.getBoundingClientRect().height,
+    width: 640, height: 420,
     margin: {left: 60, right: 30, top: 35, bottom: 30},
   })
 
-  const embedElement = document.getElementById("plot_alt")
-  embedPlot = new EmbedPlot(embedElement, fData, forecasts, vField, {
+  embedPlot = new EmbedPlot(document.getElementById("plot_alt"), fData, forecasts, vField, {
     state: simplexPlot.state,
-    width: embedElement.getBoundingClientRect().width, height: embedElement.getBoundingClientRect().height, 
+    width: 420, height: 420, 
     margin: {left: 60, right: 30, top: 35, bottom: 30}
   })
   
   //const dataEmbed = delayEmbed(fData, [vField], E)
-  const phaseElement = document.getElementById("plot_phase")
-  phasePlot = new PhasePlot(phaseElement, data, forecasts, vField, {
+  phasePlot = new PhasePlot(document.getElementById("plot_phase"), data, forecasts, vField, {
     state: simplexPlot.state,
-    width: phaseElement.getBoundingClientRect().width, height: phaseElement.getBoundingClientRect().height, 
+    width: 420, height: 420, 
     margin: {left: 60, right: 30, top: 30, bottom: 30}
   })
   
-  const distanceElement = document.getElementById("plot_weight")
-
-  distancePlot = new DistancePlot(distanceElement, forecasts, vField, {
+  distancePlot = new DistancePlot(document.getElementById("plot_weight"), forecasts, vField, {
     state: simplexPlot.state,
     weightColorFunction: embedPlot.weightColorScale,
-    width: distanceElement.getBoundingClientRect().width, height: distanceElement.getBoundingClientRect().height, 
+    width: 420, height: 420, 
     margin: {left: 60, right: 30, top: 20, bottom: 35}
   })
 
@@ -373,65 +297,65 @@ function draw() {
 
   createTimeSlider(document.getElementById("time-slider-container"), 
     simplexPlot.element, simplexPlot.scaleX, simplexPlot.tForecastRange, simplexPlot.state)
+
+  document.getElementById("plot-params").style.display = "flex"
+  document.getElementById("plots").style.display = "inline-block"
+  document.getElementById("loader").style.display = "none"
+
 }
 
-
 function createTimeSlider(timeContainer, plotElement, scaleX, tRange,  state) {
-  // timeContainer.innerHTML = ""
+  timeContainer.innerHTML = ""
 
-  // const timeSlider = document.createElement("input")
-  // timeSlider.setAttribute("type", "range")
-  // timeSlider.setAttribute("class", "slider")
+  
 
-  // //const sliderLeft = plotElement.getBoundingClientRect().left + scaleX(tRange[0]) - 10
-  // const sliderLeft = 0
-  // const sliderWidth = scaleX(tRange[1]) - scaleX(tRange[0]) + 10
-  // const sliderTop = plotElement.getBoundingClientRect().height
-  // console.log(plotElement.getBoundingClientRect())
-  // timeSlider.setAttribute("style", `
-  //   width: ${sliderWidth}px;
-  //   position: absolute;
-  //   left: ${sliderLeft}px;
-  //   bottom: -6px;
-  // `)
-  // timeSlider.setAttribute("min", tRange[0])
-  // timeSlider.setAttribute("max", tRange[1])
-  // timeSlider.setAttribute("value", state.plotT)
+  const timeSlider = document.createElement("input")
+  timeSlider.setAttribute("type", "range")
+  timeSlider.setAttribute("class", "slider")
 
-  // const label = document.createElement("label")
-  // const labelText = state.plotT + ""
-  // label.innerHTML = labelText // TODO: Has to be a better way to do this.
-  // label.setAttribute("style", `
-  //   float: right;
-  //   font-size: 10px;
-  //   position: absolute;
-  //   left: ${sliderLeft - labelText.length*6.5}px;
-  //   top: ${sliderTop-3}px;
-  // `)
+  //const sliderLeft = plotElement.getBoundingClientRect().left + scaleX(tRange[0]) - 10
+  const sliderLeft = 0
+  const sliderWidth = scaleX(tRange[1]) - scaleX(tRange[0]) + 10
+  const sliderTop = plotElement.getBoundingClientRect().height
+  timeSlider.setAttribute("style", `
+    width: ${sliderWidth}px;
+    position: absolute;
+    left: ${sliderLeft}px;
+    bottom: -6px;
+  `)
+  timeSlider.setAttribute("min", tRange[0])
+  timeSlider.setAttribute("max", tRange[1])
+  timeSlider.setAttribute("value", state.plotT)
 
-  const timeSlider = document.getElementById("c-time-slider");
-  const timeLabel = document.getElementById("c-time-label");
-
-  timeSlider.setAttribute("min", tRange[0]);
-  timeSlider.setAttribute("max", tRange[1]);
-  timeSlider.setAttribute("value", state.plotT);
-  timeLabel.innerText = state.plotT + "";
+  const label = document.createElement("label")
+  const labelText = state.plotT + ""
+  label.innerHTML = labelText // TODO: Has to be a better way to do this.
+  label.setAttribute("style", `
+    float: right;
+    font-size: 10px;
+    position: absolute;
+    left: ${sliderLeft - labelText.length*6.5}px;
+    top: ${sliderTop-3}px;
+  `)
 
   timeSlider.addEventListener("input", () => {
     state.plotT = parseInt(timeSlider.value)
-    timeLabel.innerText = state.plotT + ""
+    label.innerHTML = state.plotT + ""
     //hashParams.t = state.plotT
     hashParams.set("t", state.plotT)
     updateHashParams()
   })
-
-  const sliderWidth = scaleX.range()[1] - scaleX.range()[0] - 60
-  timeSlider.style.width = sliderWidth + "px"
-  timeSlider.style.marginLeft = "80px"
-
   
-  // timeContainer.appendChild(label)
-  // timeContainer.appendChild(timeSlider)
+  timeContainer.appendChild(label)
+  timeContainer.appendChild(timeSlider)
+}
+
+const collapsibles = document.getElementsByClassName("collapsible")
+for (const collapsible of collapsibles) {
+  collapsible.addEventListener("click", () => {
+    const content = collapsible.nextElementSibling // TODO: I don't like this.
+    content.style.display = content.style.display == "block" ? "none" : "block" 
+  })
 }
 
 const dataSelectLabel = document.getElementById("data-select-label")
@@ -659,23 +583,24 @@ dateToggle.addEventListener("input", () => {
   updateHashParams()
 })
 
-// const overlay = document.getElementById("file-upload-overlay")
-// document.addEventListener("dragover", (e) => {
-//   e.preventDefault();
-// })
+const overlay = document.getElementById("file-upload-overlay")
+document.addEventListener("dragover", (e) => {
+  e.preventDefault();
+})
 
-// document.addEventListener("dragenter", (e) => {
-//   overlay.style.display = "block"
-// })
 
-// overlay.addEventListener("dragleave", (e) => {
-//   overlay.style.display = "none"
-// })
+document.addEventListener("dragenter", (e) => {
+  overlay.style.display = "block"
+})
+
+overlay.addEventListener("dragleave", (e) => {
+  overlay.style.display = "none"
+})
 
 document.addEventListener("drop", (e) => {
   e.preventDefault()
 
-  // overlay.style.display = "none"
+  overlay.style.display = "none"
   document.getElementById("file-select-content").style.display = "block"
   if (e.dataTransfer.items.length > 0) {
     if (e.dataTransfer.items[0].kind === 'file') {
