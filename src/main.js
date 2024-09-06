@@ -320,19 +320,21 @@ function draw() {
   const sField = gFieldSelect.value 
   const tField = tFieldSelect.value
 
+  const padding = 5;
+
   const tsElement = document.getElementById("plot_ts")
   simplexPlot = new SimplexPlot(tsElement, fData, forecasts, vField, {
     plotT:  parseInt(fieldValues.t),
     dateField: tFieldToggle.checked ? tField : null,
     showDates: dateToggle.checked,
-    width: tsElement.getBoundingClientRect().width, height: tsElement.getBoundingClientRect().height,
+    width: tsElement.getBoundingClientRect().width-padding, height: tsElement.getBoundingClientRect().height-padding,
     margin: {left: 60, right: 30, top: 35, bottom: 30},
   })
 
   const embedElement = document.getElementById("plot_alt")
   embedPlot = new EmbedPlot(embedElement, fData, forecasts, vField, {
     state: simplexPlot.state,
-    width: embedElement.getBoundingClientRect().width, height: embedElement.getBoundingClientRect().height, 
+    width: embedElement.getBoundingClientRect().width-padding, height: embedElement.getBoundingClientRect().height-padding, 
     margin: {left: 60, right: 30, top: 35, bottom: 30}
   })
   
@@ -340,7 +342,7 @@ function draw() {
   const phaseElement = document.getElementById("plot_phase")
   phasePlot = new PhasePlot(phaseElement, data, forecasts, vField, {
     state: simplexPlot.state,
-    width: phaseElement.getBoundingClientRect().width, height: phaseElement.getBoundingClientRect().height, 
+    width: phaseElement.getBoundingClientRect().width-padding, height: phaseElement.getBoundingClientRect().height-padding, 
     margin: {left: 60, right: 30, top: 30, bottom: 30}
   })
   
@@ -349,7 +351,7 @@ function draw() {
   distancePlot = new DistancePlot(distanceElement, forecasts, vField, {
     state: simplexPlot.state,
     weightColorFunction: embedPlot.weightColorScale,
-    width: distanceElement.getBoundingClientRect().width, height: distanceElement.getBoundingClientRect().height, 
+    width: distanceElement.getBoundingClientRect().width-padding, height: distanceElement.getBoundingClientRect().height-padding, 
     margin: {left: 60, right: 30, top: 20, bottom: 35}
   })
 
