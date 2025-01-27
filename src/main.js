@@ -11,24 +11,32 @@ const contentElement = document.getElementById("content");
 const gridElement = document.getElementById("grid-container");
 const phaseElement = document.getElementById("item3");
 
+const squareElements = document.querySelectorAll(".square");
+
 let timeoutId;
 const resizeObserver = new ResizeObserver(() => {
   clearTimeout(timeoutId);
 
-  const width = contentElement.getBoundingClientRect().width - 40;
-  const height = contentElement.getBoundingClientRect().height - 40;
+  squareElements.forEach(elem => {
+    const bbox = elem.getBoundingClientRect();
+    elem.style.width = bbox.height + "px";
+  })
 
-  const gridCellWidth = width / 9;
-  const gridCellHeight = height / 2;
 
-  const phaseWidth = gridCellWidth * 4;
-  const phaseHeight = gridCellHeight;
+  // const width = contentElement.getBoundingClientRect().width - 40;
+  // const height = contentElement.getBoundingClientRect().height - 40;
 
-  if (phaseWidth > phaseHeight) {
-    gridElement.style.maxWidth = 1*(phaseHeight/4)*9 + "px";
-  } else {
-    gridElement.style.maxHeight = 1*(phaseHeight/4)*9 + "px";
-  }
+  // const gridCellWidth = width / 9 - 40;
+  // const gridCellHeight = height / 2;
+
+  // const phaseWidth = gridCellWidth * 4;
+  // const phaseHeight = gridCellHeight;
+
+  // if (phaseWidth > phaseHeight) {
+  //   gridElement.style.maxWidth = 1*(phaseHeight/4)*9 + "px";
+  // } else {
+  //   gridElement.style.maxHeight = 1*(phaseHeight/4)*9 + "px";
+  // }
 
   redraw();
   // const plots = document.querySelectorAll(".plot")
@@ -163,16 +171,11 @@ exampleLink.addEventListener("click", e => {
   window.location.reload()
 })
 
-// ====
+// ===
 
-const dataConfigElement = document.querySelector("#data-config")
-const dataConfigCollElement = document.querySelector("#data-config .collapsible")
-dataConfigCollElement.addEventListener("click", () => {
-  dataConfigElement.classList.toggle("closed")
-  redraw();
+document.getElementById("button-data").addEventListener("click", () => {
+  document.getElementById("data-config").classList.toggle("visible");
 })
-
-
 
 
 // ==================================
@@ -547,7 +550,9 @@ runButton.addEventListener("click", () => {
   hashParams.set("sField", gFieldSelect.value)
   hashParams.set("timeIsDate", tFieldToggle.checked)
   updateHashParams()
-  document.getElementById("plots").style.filter = ""
+  // document.getElementById("plots").style.filter = ""
+
+  document.getElementById("data-config").classList.remove("visible");
   runData(data)
   runButton.style.border = ""
 })

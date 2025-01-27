@@ -1,5 +1,5 @@
 :root {
-  --main-header-height: 55px;
+  --main-header-height: 45px;
   --info-header-height: 40px;
 
   --header-height: calc(var(--main-header-height) + var(--info-header-height));
@@ -8,11 +8,19 @@
   --title-height: 30px;
 
   --setting-height: 0px;
+
+  --card-gap: 15px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0px;
   font-family: sans-serif;
+  background-color: #f1eceb;
+
 }
 
 code {
@@ -88,10 +96,23 @@ header {
   color: #ffffff;
 }
 
+#button-data {
+  position: absolute;
+  left: -35px;
+  top: 0px;
+  font-size: 30px;
+  color: rgb(110, 106, 106);
+  cursor: pointer;
+}
+
+#button-data:hover {
+  filter: brightness(120%);
+}
+
 #links-container {
   margin-inline: 25px;
   color: white;
-  font-size: 25px;
+  font-size: 22px;
   display: flex; 
   gap: 15px;
 }
@@ -108,7 +129,7 @@ header {
 }
 
 #content {
-  height: calc(100vh - var(--main-header-height) - var(--main-padding)*2);
+  height: calc(100vh - var(--main-header-height) );
   flex-direction: column;
   display: flex; 
   align-items: center;
@@ -131,8 +152,77 @@ header {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px
+  padding: 15px
 }
+
+#dashboard {
+  display: flex; 
+  gap: var(--card-gap);
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+#col-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+  flex-grow: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+#col-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+  flex-grow: 1;
+
+    /* Workaround for scrollbar not working in settings card*/
+    min-height: 605px;
+}
+
+
+#col-left-row-lower {
+  display: flex;
+  gap: var(--card-gap);
+  flex-grow: 1;
+  flex-basis: 50%;
+
+}
+
+#card-ts {
+  flex-grow: 1;
+  min-height: 250px;
+  flex-basis: 50%;
+}
+
+#card-alt {
+  height: 100%;
+  flex-basis: 50%;
+
+  /* Workaround for scrollbar not working in settings card*/
+  min-height: 290px; 
+}
+
+#card-weight {
+  height: 100%;
+  flex-basis: 50%;
+
+   /* Workaround for scrollbar not working in settings card*/
+  min-height: 290px; 
+}
+
+#card-phase {
+  min-height: 0;
+}
+
+#card-settings {
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 
 
 #grid-container {
@@ -144,7 +234,7 @@ header {
   gap: 10px
 }
 
-#item1 { grid-column: span 6; position: relative;} /* 6/9 = 2/3 */
+#item1 { grid-column: span 6; position: relative; } /* 6/9 = 2/3 */
 #item2 { grid-column: span 3; } /* 3/9 = 1/3 */
 #item3 { 
   grid-column: span 4;
@@ -155,11 +245,13 @@ header {
   } /* 1/9 */
 #item5 { grid-column: span 3; } /* 3/9 = 1/3 */
 
-#dashboard {
+/* #dashboard {
   display: flex;
   height: 100%;
   gap: 10px;
-}
+} */
+
+
 
 #ds-left {
   display: flex;
@@ -220,6 +312,7 @@ header {
   height: 100%;
   font-family: sans-serif;
   overflow-y: auto;
+  min-height: 0;
 }
 
 #plot-params input[type="number"] {
@@ -237,8 +330,17 @@ header {
 }
 
 #data-config {
-  width: 80%;
+  display: none;
+  width: 75%;
+  position: absolute;
+  z-index: 10;
+  top: 5px;
+  left: 5px;
+  border: solid 2px #d46760;;
+}
 
+#data-config.visible {
+  display: flex;
 }
 
 .collapsible {
